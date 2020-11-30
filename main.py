@@ -14,6 +14,7 @@ To run tracking on an object using YOLO
   python main.py --yolo (or -y) --s [source video file path]
 
 '''
+import cv2
 import numpy as np
 from tracking import track_green
 from tracking import track_yolo
