@@ -14,6 +14,7 @@ To run tracking on an object using YOLO
   python main.py --yolo (or -y) --s [source video file path]
 
 '''
+import argparse
 import cv2
 import numpy as np
 from tracking import track_green, track_yolo
@@ -58,10 +59,12 @@ def parse(source, method):
         print('Read a new frame: ', success)
         count += 1
         cv2.imshow("output", frame)
+        key = cv2.waitKey(20)
+        if key == 27:  # exit on ESC
+            break
 
     cv2.destroyWindow("output")
-
-
+    cap.release()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CS1290 Lightpainting")
@@ -74,4 +77,5 @@ if __name__ == '__main__':
         method = "yolo"
     else:
         method = "green"
+    source = 0
     parse(source, method)
