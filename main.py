@@ -20,11 +20,12 @@ import numpy as np
 from tracking import track_green, track_yolo
 
 
-def lightpainting(method):
+def lightpainting(method, image):
+    img = image
     if method == "green":
         # need to change main function to take in an image, for now, it is hard coded
         img = "img_name.jpeg"
-        points = track_green(img)
+        points = track_green(image)
     elif method == "yolo":
         img = "img_name.jpeg"
         points = track_yolo(img)
@@ -33,32 +34,41 @@ def lightpainting(method):
 
 def paint(img, points):
     # draws a straight lines on image depending on the location
-    for pair in points:
-        start_point = pair[0]
-        end_point = pair[1]
-        start_point = (0, 0)
-        color = (255, 255, 255)
-        thickness = 9
-        output = cv2.line(img, start_point, end_point, color, thickness) 
+    print(points)
+    output = img
+    # we need at least 2 points
+    if len(points)> 2:
+        for pair in points:
+            start_point = pair[0]
+            end_point = pair[1]
+            start_point = (0, 0)
+            color = (255, 255, 255)
+            thickness = 9
+            output = cv2.line(img, start_point, end_point, color, thickness) 
     return output
 
 def parse(source, method):
     """
     reads in the video input and call tracking on each frame 
     """
-    cv2.namedWindow("preview")
-    cap = cv2.VideoCapture(source)
-    success, image = cap.read()
+    cv2.namedWindow("output")
+    cap = cv2.VideoCapture(0)
+    if cap.isOpened():
+        success, image = cap.read()
+    else:
+        success = False
     frames = [] #if we want to save frames as a video
     count = 0
+    # skip the first frame bc it's a black
+    success, image = cap.read()
     while success:
         cv2.imwrite("frame%d.jpg" % count, image)  # save frame as JPEG file
-        frame = lightpainting(method)
+        frame = lightpainting(method, image)
         frames.append(frame)
+        cv2.imshow("output", frame)
         success, image = cap.read()
         print('Read a new frame: ', success)
         count += 1
-        cv2.imshow("output", frame)
         key = cv2.waitKey(20)
         if key == 27:  # exit on ESC
             break
