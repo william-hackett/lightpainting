@@ -16,8 +16,7 @@ To run tracking on an object using YOLO
 '''
 import cv2
 import numpy as np
-from tracking import track_green
-from tracking import track_yolo
+from tracking import track_green, track_yolo
 
 
 def lightpainting(method):
@@ -28,22 +27,40 @@ def lightpainting(method):
     elif method == "yolo":
         img = "img_name.jpeg"
         points = track_yolo(img)
+    output = paint(img, points)
+    return output
 
+def paint(img, points):
+    # draws a straight lines on image depending on the location
+    for pair in points:
+        start_point = pair[0]
+        end_point = pair[1]
+        start_point = (0, 0)
+        color = (255, 255, 255)
+        thickness = 9
+        output = cv2.line(img, start_point, end_point, color, thickness) 
+    return output
 
 def parse(source, method):
     """
     reads in the video input and call tracking on each frame 
     """
+    cv2.namedWindow("preview")
     cap = cv2.VideoCapture(source)
     success, image = cap.read()
-
+    frames = [] #if we want to save frames as a video
     count = 0
     while success:
         cv2.imwrite("frame%d.jpg" % count, image)  # save frame as JPEG file
-        lightpainting(method)
+        frame = lightpainting(method)
+        frames.append(frame)
         success, image = cap.read()
         print('Read a new frame: ', success)
         count += 1
+        cv2.imshow("output", frame)
+
+    cv2.destroyWindow("output")
+
 
 
 if __name__ == '__main__':
