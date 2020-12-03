@@ -17,7 +17,7 @@ To run tracking on an object using YOLO
 import argparse
 import cv2
 import numpy as np
-from tracking import track_green, track_yolo
+from tracking import track_green, track_yolo, init_yolo
 import math
 
 def lightpainting(method, image):
@@ -112,6 +112,7 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
     if args["yolo"]:
         method = "yolo"
+        init_yolo()
     else:
         method = "green"
     source = 0

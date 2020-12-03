@@ -16,6 +16,12 @@ import cv2
 import imutils
 
 
+def init_yolo():
+    global yolo 
+    yolo = YOLO("models/cross-hands-yolov4-tiny.cfg", "models/cross-hands-yolov4-tiny.weights", ["hand"])
+    yolo.size = int(416)
+    yolo.confidence = float(0.7)
+
 def track_green(img):
     '''
     Returns the positions (x,y) of green pixels within the input image img
