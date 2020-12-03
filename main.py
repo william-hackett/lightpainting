@@ -32,9 +32,9 @@ def lightpainting(method, image):
 def get_coord_change(p1, p2):
     diff = p2-p1
     hyp = math.sqrt((diff[0]**2)+(diff[1]**2))
-    sin = diff[0]/hyp
-    cos = diff[1]/hyp
-    tan = diff[1]/diff[0]
+    sin = diff[0]/(hyp+0.01)
+    cos = diff[1]/(hyp+0.01)
+    tan = diff[1]/(diff[0]+0.01)
     color_change = ((cos)*255, (sin)*255, (tan)*255)
     return color_change
 
