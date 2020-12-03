@@ -23,7 +23,7 @@ def track_green(img):
     img = cv2.GaussianBlur(img, (11, 11), 0)
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     green = cv2.cvtColor(np.uint8([[[0, 255, 0]]]), cv2.COLOR_BGR2HSV)
-    sensitivity = 1
+    sensitivity = 40
     greenLower = (29, 86, 6)
     greenUpper = (64, 255, 255)
 
@@ -39,7 +39,7 @@ def track_green(img):
     # contours, hierarchy
     items = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours, hierarchy = items
-    # contours = items[0] if len(items) == 2 else items[1]
+
     print("number of contours found:", len(contours))
 
     center = (0,0)

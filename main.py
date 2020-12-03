@@ -18,7 +18,7 @@ import argparse
 import cv2
 import numpy as np
 from tracking import track_green, track_yolo
-
+import math
 
 def lightpainting(method, image):
     img = image
@@ -29,17 +29,44 @@ def lightpainting(method, image):
         points = track_yolo(image)
     return points
 
-def paint(img, points):
+def get_coord_change(p1, p2):
+    diff = p2-p1
+    hyp = math.sqrt((diff[0]**2)+(diff[1]**2))
+    sin = diff[0]/hyp
+    cos = diff[1]/hyp
+    tan = diff[1]/diff[0]
+    color_change = ((cos)*255, (sin)*255, (tan)*255)
+    return color_change
+
+def paint(output, points):
     # draws a straight lines on image depending on the location
-    output = img
     color = (255, 255, 255)
     thickness = 5
     # we need at least 2 points
     if len(points)> 2:
         for i in range(len(points)-2):
-            start_point = tuple(points[i])
-            end_point = tuple(points[i+1])
-            output = cv2.line(output.copy(), start_point, end_point, color, thickness) 
+            p1, p2 = points[i], points[i+1]
+            color_change = get_coord_change(p1, p2)
+            color2 = np.add(color,color_change)/2
+            start_point = tuple(p1)
+            end_point = tuple(p2)
+            # simple line
+            # output = cv2.line(output, start_point, end_point, color, thickness)
+            # custom circle drawing function
+            output = custom_line(output, p1, p2, color, color2)
+            color = color2
+    return output
+
+def custom_line(output, p1, p2, c1, c2):
+    # draws 100 circles between two points using a color gradient
+    points_on_line = np.linspace(p1, p2, 100) 
+    for i in range (len(points_on_line)):
+        alpha = i/len(points_on_line)
+        point = points_on_line[i]
+        # fade_range = np.arange(0., 1, 1./4)
+        strip = (np.asarray(c1)*(1-alpha) + np.asarray(c2)*(alpha))
+        output = cv2.circle(output, tuple(point), 5, strip, -1)
+        x, y = int(point[0]),int(point[1])
     return output
 
 def parse(source, method):
@@ -60,15 +87,19 @@ def parse(source, method):
         # cv2.imwrite("frame%d.jpg" % count, image)  # save frame as JPEG file
         # frames.append(output)
         point = lightpainting(method, image)
-        if not(np.sum(point) ==0):
+        # don't add if point is (0,0)
+        if not(np.sum(point) == 0):
             points.append(point)
         output = paint(image, points)
+        output = cv2.flip(output,1)
         cv2.imshow("output", output)
         success, image = cap.read()
         # print('Read a new frame: ', success)
         key = cv2.waitKey(20)
         if key == 27 or key == ord('q'):  # exit on ESC or q
             break
+        if len(points)>25:
+            points.pop(0)
     cv2.destroyWindow("output")
     cap.release()
 
