@@ -28,8 +28,8 @@ def track_green(img):
     greenUpper = (64, 255, 255)
 
     # green in hsv color space
-    green_range = np.array([(green[0][0][0] - sensitivity, 100, 100),
-                   (green[0][0][0] + sensitivity, 255, 255)])
+    # green_range = np.array([(green[0][0][0] - sensitivity, 100, 100),
+                #    (green[0][0][0] + sensitivity, 255, 255)])
     # mask green objects
     # mask = cv2.inRange(img_hsv, green_range[0], green_range[1])
     mask = cv2.inRange(img_hsv, greenLower, greenUpper)
@@ -49,11 +49,6 @@ def track_green(img):
         rect = cv2.minAreaRect(contour)
         box = cv2.boxPoints(rect)
         center = np.mean(box, axis=0)
-        if np.sum(center) == 0:
-            print("ZERO FOUND")
-        # im = cv2.drawContours(im, [box], 0, (0, 0, 255), 2)
-
-        # x, y, w, h = cv2.boundingRect(contour)
     return center  # (x,y)
 
 

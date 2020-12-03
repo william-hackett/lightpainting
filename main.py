@@ -53,25 +53,22 @@ def parse(source, method):
     else:
         success = False
     frames = [] #if we want to save frames as a video
-    count = 0
-    # skip the first frame bc it's a black
-    success, image = cap.read()
     points = []
+    # skip the first frame bc it's a black square
+    success, image = cap.read()
     while success:
         # cv2.imwrite("frame%d.jpg" % count, image)  # save frame as JPEG file
+        # frames.append(output)
         point = lightpainting(method, image)
         if not(np.sum(point) ==0):
             points.append(point)
         output = paint(image, points)
-        frames.append(output)
         cv2.imshow("output", output)
         success, image = cap.read()
-        print('Read a new frame: ', success)
-        count += 1
+        # print('Read a new frame: ', success)
         key = cv2.waitKey(20)
-        if key == 27 or key == ord('q'):  # exit on ESC
+        if key == 27 or key == ord('q'):  # exit on ESC or q
             break
-
     cv2.destroyWindow("output")
     cap.release()
 
