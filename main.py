@@ -24,27 +24,22 @@ def lightpainting(method, image):
     img = image
     if method == "green":
         # need to change main function to take in an image, for now, it is hard coded
-        img = "img_name.jpeg"
         points = track_green(image)
     elif method == "yolo":
-        img = "img_name.jpeg"
-        points = track_yolo(img)
-    output = paint(img, points)
-    return output
+        points = track_yolo(image)
+    return points
 
 def paint(img, points):
     # draws a straight lines on image depending on the location
-    print(points)
     output = img
+    color = (255, 255, 255)
+    thickness = 5
     # we need at least 2 points
     if len(points)> 2:
-        for pair in points:
-            start_point = pair[0]
-            end_point = pair[1]
-            start_point = (0, 0)
-            color = (255, 255, 255)
-            thickness = 9
-            output = cv2.line(img, start_point, end_point, color, thickness) 
+        for i in range(len(points)-2):
+            start_point = tuple(points[i])
+            end_point = tuple(points[i+1])
+            output = cv2.line(output.copy(), start_point, end_point, color, thickness) 
     return output
 
 def parse(source, method):
@@ -61,16 +56,20 @@ def parse(source, method):
     count = 0
     # skip the first frame bc it's a black
     success, image = cap.read()
+    points = []
     while success:
-        cv2.imwrite("frame%d.jpg" % count, image)  # save frame as JPEG file
-        frame = lightpainting(method, image)
-        frames.append(frame)
-        cv2.imshow("output", frame)
+        # cv2.imwrite("frame%d.jpg" % count, image)  # save frame as JPEG file
+        point = lightpainting(method, image)
+        if not(np.sum(point) ==0):
+            points.append(point)
+        output = paint(image, points)
+        frames.append(output)
+        cv2.imshow("output", output)
         success, image = cap.read()
         print('Read a new frame: ', success)
         count += 1
         key = cv2.waitKey(20)
-        if key == 27:  # exit on ESC
+        if key == 27 or key == ord('q'):  # exit on ESC
             break
 
     cv2.destroyWindow("output")
