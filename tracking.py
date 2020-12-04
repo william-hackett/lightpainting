@@ -18,11 +18,13 @@ from yolo import YOLO
 
 
 def init_yolo():
-    global yolo 
-    yolo = YOLO("models/cross-hands-tiny-prn.cfg", "models/cross-hands-tiny-prn.weights", ["hand"])
+    global yolo
+    yolo = YOLO("models/cross-hands-tiny-prn.cfg",
+                "models/cross-hands-tiny-prn.weights", ["hand"])
     # yolo = YOLO("models/cross-hands-yolov4-tiny.cfg", "models/cross-hands-yolov4-tiny.weights", ["hand"])
     yolo.size = int(416)
     yolo.confidence = float(0.4)
+
 
 def track_green(img):
     '''
@@ -34,13 +36,15 @@ def track_green(img):
     sensitivity = 40
     # greenLower = (29, 86, 6)
     # greenUpper = (64, 255, 255)
+    kernel = np.ones((5, 5), np.uint8())
 
     # green in hsv color space
     green_range = np.array([(green[0][0][0] - sensitivity, 100, 100),
-                   (green[0][0][0] + sensitivity, 255, 255)])
+                            (green[0][0][0] + sensitivity, 255, 255)])
     # mask green objects
     mask = cv2.inRange(img_hsv, green_range[0], green_range[1])
     # mask = cv2.inRange(img_hsv, greenLower, greenUpper)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
 
@@ -49,8 +53,7 @@ def track_green(img):
     contours, hierarchy = items
 
     print("number of contours found:", len(contours))
-
-    center = (0,0)
+    center = (0, 0)
     if len(contours) > 0:
         contours = imutils.grab_contours(items)
         contour = max(contours, key=cv2.contourArea)
@@ -69,8 +72,8 @@ def track_yolo(img):
     # yolo.size = int(args.size)
     # yolo.confidence = float(args.confidence)
     width, height, inference_time, results = yolo.inference(img)
-    center = [0,0]
-    if len(results)>0:
+    center = [0, 0]
+    if len(results) > 0:
         for detection in results:
             id, name, confidence, x, y, w, h = detection
             cx = x + (w / 2)
