@@ -140,7 +140,7 @@ class Painting():
             # draw = np.expand_dims(draw, 2)
             # backtorgb = cv2.cvtColor(draw, cv2.COLOR_GRAY2RGB)
             x, y = int(point[0]), int(point[1])
-        return output+backtorgb
+        return output
 
     def parse(self):
         """
