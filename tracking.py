@@ -19,26 +19,31 @@ from yolo import YOLO
 import subprocess
 import shlex
 
+
 def init_yolo():
     global yolo
     config = "models/cross-hands.cfg"
     weights = "models/cross-hands.weights"
     if not(os.path.isfile(config) and os.path.isfile(weights)):
-        proc1 = "wget -O " +config+" https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.cfg"
-        proc2 = "wget -O " +weights+" https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.weights"
+        proc1 = "wget -O " + config + \
+            " https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.cfg"
+        proc2 = "wget -O " + weights + \
+            " https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.weights"
         subprocess.call(shlex.split(proc1))
         subprocess.call(shlex.split(proc2))
     yolo = YOLO(config, weights, ["hand"])
     yolo.size = int(256)
     yolo.confidence = float(0.3)
 
-def track_green(img):
+
+def track_green(img, num_objects):
     '''
     Returns the positions (x,y) of green pixels within the input image img
     '''
     img = cv2.GaussianBlur(img, (11, 11), 0)
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    green = cv2.cvtColor(np.uint8([[[0, 255, 0]]]), cv2.COLOR_BGR2HSV) #gives  60 255 255
+    green = cv2.cvtColor(np.uint8([[[0, 255, 0]]]),
+                         cv2.COLOR_BGR2HSV)  # gives  60 255 255
     sensitivity = 15
     kernel = np.ones((5, 5), np.uint8())
 
@@ -55,16 +60,20 @@ def track_green(img):
     # contours, hierarchy
     items = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours, hierarchy = items
-
-    #print("number of contours found:", len(contours))
-    center = (0, 0)
+    centers = []
+    # print("number of contours found:", len(contours))
     if len(contours) > 0:
         contours = imutils.grab_contours(items)
-        contour = max(contours, key=cv2.contourArea)
-        rect = cv2.minAreaRect(contour)
-        box = cv2.boxPoints(rect)
-        center = np.mean(box, axis=0)
-    return center  # (x,y)
+        contours = sorted(contours, key=cv2.contourArea)
+        for i in range(min(num_objects, len(contours))):
+            contour = contours[i]
+            rect = cv2.minAreaRect(contour)
+            box = cv2.boxPoints(rect)
+            center = np.mean(box, axis=0)
+            centers.append(center)
+    if len(centers) == 0:
+        centers.append((0, 0))
+    return centers  # (x,y)
 
 
 def track_yolo(img):
@@ -74,7 +83,7 @@ def track_yolo(img):
     '''
     dim = (img.shape[1]//2, img.shape[0]//2)
     # resize image
-    img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 
     width, height, inference_time, results = yolo.inference(img)
     center = [0, 0]

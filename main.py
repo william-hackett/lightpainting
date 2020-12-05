@@ -37,13 +37,14 @@ class Painting():
     - self.points is the current list of points representing the tracked path
     """
 
-    def __init__(self, method, source):
+    def __init__(self, method, source, num_objects):
         self.method = method
         self.source = source
         self.curr_frame = None
         self.frames = []
         self.points = []
         self.start_color = (0, 0, 255)
+        self.num_objects = num_objects
 
         if method == "yolo":
             init_yolo()
@@ -51,11 +52,10 @@ class Painting():
     def point_tracking(self):
         img = self.curr_frame
         if self.method == "green":
-            point = track_green(img)
+            centers = track_green(img, self.num_objects)
         elif self.method == "yolo":
-    
-            point = track_yolo(img)
-        return point
+            centers = track_yolo(img)
+        return centers
 
     def rainbow_loop(self, color):
         b = color[0]
@@ -86,8 +86,8 @@ class Painting():
                 p1, p2 = self.points[i], self.points[i+1]
                 # For rainbow_loop, set color2 to next color in spectrum
                 color2 = self.rainbow_loop(color)
-                start_point = tuple(p1)
-                end_point = tuple(p2)
+                # start_point = tuple(p1)
+                # end_point = tuple(p2)
                 # Simple line
                 # output = cv2.line(output, start_point, end_point, color, thickness)
                 # Custom circle drawing function
@@ -99,8 +99,9 @@ class Painting():
 
     def custom_line(self, output, p1, p2, c1, c2):
         # Draws circles between two points using a color gradient
-        distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-        thickness = int(7- (distance*3/output.shape[1])) #radius is between 7 and 4 depending on the distance
+        distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+        # radius is between 7 and 4 depending on the distance
+        thickness = int(7 - (distance*3/output.shape[1]))
         points_on_line = np.linspace(p1, p2, int(distance//2))
         for i in range(len(points_on_line)):
             alpha = i/len(points_on_line)
@@ -143,20 +144,21 @@ class Painting():
         while success:
             # cv2.imwrite("frame%d.jpg" % count, self.curr_frame)  # save frame as JPEG file
             # frames.append(output)
-            point = self.point_tracking()
+            centers = self.point_tracking()
             # don't add if point is (0,0)
-            if not(np.sum(point) == 0):
-                self.points.append(point)
-            output = self.paint(self.start_color)
-            output = cv2.flip(output, 1)
-            cv2.imshow("output", output)
-            success, self.curr_frame = cap.read()
-            # print('Read a new frame: ', success)
-            key = cv2.waitKey(20)
-            if key == 27 or key == ord('q'):  # exit on ESC or q
-                break
-            if len(self.points) > 30:
-                self.points.pop(0)
+            for point in centers:
+                if not(np.sum(point) == 0):
+                    self.points.append(point)
+                output = self.paint(self.start_color)
+                output = cv2.flip(output, 1)
+                cv2.imshow("output", output)
+                success, self.curr_frame = cap.read()
+                # print('Read a new frame: ', success)
+                key = cv2.waitKey(20)
+                if key == 27 or key == ord('q'):  # exit on ESC or q
+                    break
+                if len(self.points) > 30:
+                    self.points.pop(0)
         cv2.destroyWindow("output")
         cap.release()
 
@@ -167,6 +169,10 @@ if __name__ == '__main__':
                         help="Indicates tracking method. Default is green.")
     parser.add_argument("-s", "--source", type=str, default=0,
                         help="Name of the source video with extension")
+
+    parser.add_argument("-o", "--objects", type=str, default="",
+                        help="Number of objects to track")
+
     args = vars(parser.parse_args())
     if args["method"] == "green":
         method = "green"
@@ -176,6 +182,11 @@ if __name__ == '__main__':
         print("Input --method is not a valid option." +
               " Defaulting to green tracking.")
         method = "green"
+
+    if not args["objects"]:
+        num_objects = 1
+    else:
+        num_objects = args["objects"]
     source = args["source"]
-    painter = Painting(method, source)
+    painter = Painting(method, source, int(num_objects))
     painter.parse()
