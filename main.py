@@ -56,15 +56,6 @@ class Painting():
             point = track_yolo(img)
         return point
 
-    def get_coord_change(self, p1, p2):
-        diff = p2-p1
-        hyp = math.sqrt((diff[0]**2)+(diff[1]**2))
-        sin = diff[0]/(hyp+0.01)
-        cos = diff[1]/(hyp+0.01)
-        tan = diff[1]/(diff[0]+0.01)
-        color_change = ((cos)*255, (sin)*255, (tan)*255)
-        return color_change
-
     def rainbow_loop(self, color):
         b = color[0]
         g = color[1]
@@ -84,8 +75,7 @@ class Painting():
         return (b, g, r)
 
     def paint(self, color):
-        # draws a straight lines on image depending on the location
-        # color = (255, 255, 255)
+        # Draws a straight line on image depending on the location
         # For rainbow_loop, set initial color
         color = self.start_color
         thickness = 5
@@ -94,17 +84,13 @@ class Painting():
         if len(self.points) > 2:
             for i in range(len(self.points)-2):
                 p1, p2 = self.points[i], self.points[i+1]
-                #color_change = get_coord_change(p1, p2)
-                #color2 = np.add(color, color_change)/2
                 # For rainbow_loop, set color2 to next color in spectrum
                 color2 = self.rainbow_loop(color)
-                # print("Color 1: {}".format(color))
-                # print("Color 2: {}".format(color2))
                 start_point = tuple(p1)
                 end_point = tuple(p2)
-                # simple line
+                # Simple line
                 # output = cv2.line(output, start_point, end_point, color, thickness)
-                # custom circle drawing function
+                # Custom circle drawing function
                 output = self.custom_line(output, p1, p2, color, color2)
                 # output = self.custom_smooth_line(output, p1, p2)
                 color = color2
@@ -112,13 +98,13 @@ class Painting():
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
-        # draws 100 circles between two points using a color gradient
+        # Draws 100 circles between two points using a color gradient
         distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
         points_on_line = np.linspace(p1, p2, int(distance//2))
         for i in range(len(points_on_line)):
             alpha = i/len(points_on_line)
             point = points_on_line[i]
-            # fade_range = np.arange(0., 1, 1./4)
+            # Fade_range = np.arange(0., 1, 1./4)
             strip = (np.asarray(c1)*(1-alpha) + np.asarray(c2)*(alpha))
             output = cv2.circle(output, tuple(point), 5, strip, -1)
             x, y = int(point[0]), int(point[1])
