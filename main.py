@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 from tracking import track_green, track_yolo, init_yolo
 import math
-from brush import hat, hat_img
+from brush import hat, hat_img, radial_hat
 WIDTH = 1280
 HEIGHT = 720
 
@@ -104,8 +104,8 @@ class Painting():
                 # simple line
                 # output = cv2.line(output, start_point, end_point, color, thickness)
                 # custom circle drawing function
-                output = self.custom_line(output, p1, p2, color, color2)
-                # output = custom_smooth_line(output, p1, p2)
+                # output = self.custom_line(output, p1, p2, color, color2)
+                output = self.custom_smooth_line(output, p1, p2)
                 color = color2
         return output
 
@@ -122,9 +122,23 @@ class Painting():
         return output
 
     def custom_smooth_line(self, output, p1, p2):
-        draw = hat_img(8.0, 2, p1, p2)
-        draw = np.expand_dims(draw, axis=2)
-        return output + draw
+        points_on_line = np.linspace(p1, p2, 50)
+        for i in range(len(points_on_line)-1):
+            point = points_on_line[i]
+            next_point = points_on_line[i + 1]
+
+            vector1 = [1, 0]
+            vector2 = next_point-point
+            unit_vector_1 = vector1 / np.linalg.norm(vector1)
+            unit_vector_2 = vector2 / np.linalg.norm(vector2)
+            dot_product = np.dot(unit_vector_1, unit_vector_2)
+            theta = np.arccos(dot_product)
+            # output = hat_img(8.0, 2, theta, point)
+            draw = radial_hat(8.0, 2, point)
+            # draw = np.expand_dims(draw, 2)
+            # backtorgb = cv2.cvtColor(draw, cv2.COLOR_GRAY2RGB)
+            x, y = int(point[0]), int(point[1])
+        return output+backtorgb
 
     def parse(self):
         """
