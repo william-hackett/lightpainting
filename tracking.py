@@ -71,9 +71,7 @@ def track_yolo(img):
     Returns the positions (x,y) of the bounding box around the subject
     within the input image img
     '''
-    width = img.shape[1]//2
-    height = img.shape[0]//2
-    dim = (width, height)
+    dim = (img.shape[1]//2, img.shape[0]//2)
     # resize image
     img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
 
