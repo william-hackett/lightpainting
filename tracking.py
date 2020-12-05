@@ -34,8 +34,6 @@ def track_green(img):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     green = cv2.cvtColor(np.uint8([[[0, 255, 0]]]), cv2.COLOR_BGR2HSV)
     sensitivity = 40
-    # greenLower = (29, 86, 6)
-    # greenUpper = (64, 255, 255)
     kernel = np.ones((5, 5), np.uint8())
 
     # green in hsv color space
@@ -43,7 +41,6 @@ def track_green(img):
                             (green[0][0][0] + sensitivity, 255, 255)])
     # mask green objects
     mask = cv2.inRange(img_hsv, green_range[0], green_range[1])
-    # mask = cv2.inRange(img_hsv, greenLower, greenUpper)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
