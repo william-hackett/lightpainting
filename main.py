@@ -114,7 +114,7 @@ class Painting():
     def custom_line(self, output, p1, p2, c1, c2):
         # draws 100 circles between two points using a color gradient
         distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-        points_on_line = np.linspace(p1, p2, distance//2)
+        points_on_line = np.linspace(p1, p2, int(distance//2))
         for i in range(len(points_on_line)):
             alpha = i/len(points_on_line)
             point = points_on_line[i]
