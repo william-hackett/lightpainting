@@ -12,19 +12,25 @@ To run tracking on an object using YOLO, use track_yolo()
 '''
 
 import numpy as np
+import os.path
 import cv2
 import imutils
 from yolo import YOLO
-
+import subprocess
+import shlex
 
 def init_yolo():
     global yolo
-    yolo = YOLO("models/cross-hands-tiny-prn.cfg",
-                "models/cross-hands-tiny-prn.weights", ["hand"])
-    # yolo = YOLO("models/cross-hands-yolov4-tiny.cfg", "models/cross-hands-yolov4-tiny.weights", ["hand"])
-    yolo.size = int(416)
-    yolo.confidence = float(0.4)
-
+    config = "models/cross-hands.cfg"
+    weights = "models/cross-hands.weights"
+    if not(os.path.isfile(config) and os.path.isfile(weights)):
+        proc1 = "wget -O " +config+" https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.cfg"
+        proc2 = "wget -O " +weights+" https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.weights"
+        subprocess.call(shlex.split(proc1))
+        subprocess.call(shlex.split(proc2))
+    yolo = YOLO(config, weights, ["hand"])
+    yolo.size = int(256)
+    yolo.confidence = float(0.3)
 
 def track_green(img):
     '''
@@ -65,9 +71,12 @@ def track_yolo(img):
     Returns the positions (x,y) of the bounding box around the subject
     within the input image img
     '''
-    # yolo = YOLO("models/cross-hands-yolov4-tiny.cfg", "models/cross-hands-yolov4-tiny.weights", ["hand"])
-    # yolo.size = int(args.size)
-    # yolo.confidence = float(args.confidence)
+    width = img.shape[1]//2
+    height = img.shape[0]//2
+    dim = (width, height)
+    # resize image
+    img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+
     width, height, inference_time, results = yolo.inference(img)
     center = [0, 0]
     if len(results) > 0:
@@ -75,5 +84,5 @@ def track_yolo(img):
             id, name, confidence, x, y, w, h = detection
             cx = x + (w / 2)
             cy = y + (h / 2)
-            center = np.asarray([cx, cy], dtype=np.float32)
+            center = np.asarray([cx*2, cy*2], dtype=np.float32)
     return center

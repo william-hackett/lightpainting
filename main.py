@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 from tracking import track_green, track_yolo, init_yolo
 import math
-from brush import hat, hat_img, radial_hat
+# from brush import hat, hat_img, radial_hat
 WIDTH = 1280
 HEIGHT = 720
 
@@ -53,6 +53,7 @@ class Painting():
         if self.method == "green":
             point = track_green(img)
         elif self.method == "yolo":
+    
             point = track_yolo(img)
         return point
 
