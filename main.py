@@ -42,6 +42,7 @@ class Painting():
         self.curr_frame = None
         self.frames = []
         self.points = []
+        self.start_color = (0, 0, 255)
 
         if method == "yolo":
             init_yolo()
@@ -68,24 +69,24 @@ class Painting():
         g = color[1]
         r = color[2]
         if (r == 255) and (r > g):
-            g += 51
+            g += 1
         elif (g == 255) and (r > 0):
-            r -= 51
+            r -= 1
         elif (g == 255) and (g > b):
-            b += 51
+            b += 1
         elif (b == 255) and (g > 0):
-            g -= 51
+            g -= 1
         elif (b == 255) and (b > r):
-            r += 51
+            r += 1
         elif (r == 255) and (b > 0):
-            b -= 51
+            b -= 1
         return (b, g, r)
 
-    def paint(self):
+    def paint(self, color):
         # draws a straight lines on image depending on the location
         # color = (255, 255, 255)
-        # For rainbow_loop, set initial color to red
-        color = (0, 0, 255)
+        # For rainbow_loop, set initial color
+        # color = self.start_color
         thickness = 5
         output = self.curr_frame
         # we need at least 2 points
@@ -106,6 +107,7 @@ class Painting():
                 output = self.custom_line(output, p1, p2, color, color2)
                 # output = custom_smooth_line(output, p1, p2)
                 color = color2
+            self.start_color = color2
         return output
 
 
@@ -147,7 +149,7 @@ class Painting():
             # don't add if point is (0,0)
             if not(np.sum(point) == 0):
                 self.points.append(point)
-            output = self.paint()
+            output = self.paint(self.start_color)
             output = cv2.flip(output, 1)
             cv2.imshow("output", output)
             success, self.curr_frame = cap.read()
