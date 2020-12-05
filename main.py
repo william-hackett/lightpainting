@@ -105,15 +105,16 @@ class Painting():
                 # simple line
                 # output = cv2.line(output, start_point, end_point, color, thickness)
                 # custom circle drawing function
-                # output = self.custom_line(output, p1, p2, color, color2)
-                output = self.custom_smooth_line(output, p1, p2)
+                output = self.custom_line(output, p1, p2, color, color2)
+                # output = self.custom_smooth_line(output, p1, p2)
                 color = color2
             self.start_color = color2
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
         # draws 100 circles between two points using a color gradient
-        points_on_line = np.linspace(p1, p2, 100)
+        distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+        points_on_line = np.linspace(p1, p2, distance//2)
         for i in range(len(points_on_line)):
             alpha = i/len(points_on_line)
             point = points_on_line[i]
