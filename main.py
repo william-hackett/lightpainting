@@ -42,6 +42,7 @@ def get_coord_change(p1, p2):
     color_change = ((cos)*255, (sin)*255, (tan)*255)
     return color_change
 
+
 def rainbow_loop(color):
     b = color[0]
     g = color[1]
@@ -59,6 +60,7 @@ def rainbow_loop(color):
     elif (r == 255) and (b > 0):
         b -= 51
     return (b, g, r)
+
 
 def paint(output, points):
     # draws a straight lines on image depending on the location
@@ -81,8 +83,8 @@ def paint(output, points):
             # simple line
             # output = cv2.line(output, start_point, end_point, color, thickness)
             # custom circle drawing function
-            output = custom_line(output, p1, p2, color, color2)
-            # output = custom_smooth_line(output, p1, p2)
+            # output = custom_line(output, p1, p2, color, color2)
+            output = custom_smooth_line(output, p1, p2)
             color = color2
     return output
 
