@@ -69,25 +69,25 @@ class Painting():
         b = color[0]
         g = color[1]
         r = color[2]
-        if (r == 255) and (r > g):
-            g += 1
+        if (r == 255) and (r > g) and (b == 0):
+            g += 15
         elif (g == 255) and (r > 0):
-            r -= 1
+            r -= 15
         elif (g == 255) and (g > b):
-            b += 1
+            b += 15
         elif (b == 255) and (g > 0):
-            g -= 1
+            g -= 15
         elif (b == 255) and (b > r):
-            r += 1
+            r += 15
         elif (r == 255) and (b > 0):
-            b -= 1
+            b -= 15
         return (b, g, r)
 
     def paint(self, color):
         # draws a straight lines on image depending on the location
         # color = (255, 255, 255)
         # For rainbow_loop, set initial color
-        # color = self.start_color
+        color = self.start_color
         thickness = 5
         output = self.curr_frame
         # we need at least 2 points
@@ -108,7 +108,7 @@ class Painting():
                 output = self.custom_line(output, p1, p2, color, color2)
                 # output = self.custom_smooth_line(output, p1, p2)
                 color = color2
-            self.start_color = color2
+            self.start_color = self.rainbow_loop(self.start_color)
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
