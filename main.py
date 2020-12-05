@@ -133,7 +133,7 @@ class Painting():
         reads in the video input and calls tracking on each frame
         """
         cv2.namedWindow("output")
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.source)
         if cap.isOpened():
             success, self.curr_frame = cap.read()
         else:
@@ -165,7 +165,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CS1290 Lightpainting")
     parser.add_argument("-m", "--method", type=str, default="green",
                         help="Indicates tracking method. Default is green.")
-    parser.add_argument("-s", "--source", type=str, default="",
+    parser.add_argument("-s", "--source", type=str, default=0,
                         help="Name of the source video with extension")
     args = vars(parser.parse_args())
     if args["method"] == "green":
