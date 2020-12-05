@@ -25,6 +25,7 @@ from brush import hat, hat_img
 WIDTH = 1280
 HEIGHT = 720
 
+
 class Painting():
     """
     INSTANCE VARIABLES:
@@ -110,7 +111,6 @@ class Painting():
             self.start_color = color2
         return output
 
-
     def custom_line(self, output, p1, p2, c1, c2):
         # draws 100 circles between two points using a color gradient
         points_on_line = np.linspace(p1, p2, 100)
@@ -123,12 +123,10 @@ class Painting():
             x, y = int(point[0]), int(point[1])
         return output
 
-
     def custom_smooth_line(self, output, p1, p2):
         draw = hat_img(8.0, 2, p1, p2)
         draw = np.expand_dims(draw, axis=2)
         return output + draw
-
 
     def parse(self):
         """
@@ -166,9 +164,9 @@ class Painting():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CS1290 Lightpainting")
     parser.add_argument("-m", "--method", type=str, default="green",
-        help="Indicates tracking method. Default is green.")
+                        help="Indicates tracking method. Default is green.")
     parser.add_argument("-s", "--source", type=str, default="",
-        help="Name of the source video with extension")
+                        help="Name of the source video with extension")
     args = vars(parser.parse_args())
     if args["method"] == "green":
         method = "green"
@@ -176,7 +174,7 @@ if __name__ == '__main__':
         method = "yolo"
     else:
         print("Input --method is not a valid option." +
-            " Defaulting to green tracking.")
+              " Defaulting to green tracking.")
         method = "green"
     source = args["source"]
     painter = Painting(method, source)
