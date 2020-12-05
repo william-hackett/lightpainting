@@ -38,13 +38,14 @@ def track_green(img):
     '''
     img = cv2.GaussianBlur(img, (11, 11), 0)
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    green = cv2.cvtColor(np.uint8([[[0, 255, 0]]]), cv2.COLOR_BGR2HSV)
-    sensitivity = 40
+    green = cv2.cvtColor(np.uint8([[[0, 255, 0]]]), cv2.COLOR_BGR2HSV) #gives  60 255 255
+    sensitivity = 15
     kernel = np.ones((5, 5), np.uint8())
 
     # green in hsv color space
     green_range = np.array([(green[0][0][0] - sensitivity, 100, 100),
                             (green[0][0][0] + sensitivity, 255, 255)])
+
     # mask green objects
     mask = cv2.inRange(img_hsv, green_range[0], green_range[1])
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)

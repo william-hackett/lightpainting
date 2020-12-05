@@ -79,7 +79,6 @@ class Painting():
         # Draws a straight line on image depending on the location
         # For rainbow_loop, set initial color
         color = self.start_color
-        thickness = 5
         output = self.curr_frame
         # we need at least 2 points
         if len(self.points) > 2:
@@ -99,16 +98,15 @@ class Painting():
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
-        # Draws 100 circles between two points using a color gradient
+        # Draws circles between two points using a color gradient
         distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+        thickness = int(7- (distance*3/output.shape[1])) #radius is between 7 and 4 depending on the distance
         points_on_line = np.linspace(p1, p2, int(distance//2))
         for i in range(len(points_on_line)):
             alpha = i/len(points_on_line)
             point = points_on_line[i]
-            # Fade_range = np.arange(0., 1, 1./4)
             strip = (np.asarray(c1)*(1-alpha) + np.asarray(c2)*(alpha))
-            output = cv2.circle(output, tuple(point), 5, strip, -1)
-            x, y = int(point[0]), int(point[1])
+            output = cv2.circle(output, tuple(point), thickness, strip, -1)
         return output
 
     def custom_smooth_line(self, output, p1, p2):
