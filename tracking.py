@@ -52,7 +52,7 @@ def track_green(img):
     items = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours, hierarchy = items
 
-    print("number of contours found:", len(contours))
+    #print("number of contours found:", len(contours))
     center = (0, 0)
     if len(contours) > 0:
         contours = imutils.grab_contours(items)

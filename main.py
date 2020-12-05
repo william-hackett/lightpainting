@@ -24,10 +24,9 @@ WIDTH = 1280
 HEIGHT = 720
 
 
-def lightpainting(method, image):
+def point_tracking(method, image):
     img = image
     if method == "green":
-        # need to change main function to take in an image, for now, it is hard coded
         points = track_green(image)
     elif method == "yolo":
         points = track_yolo(image)
@@ -43,17 +42,40 @@ def get_coord_change(p1, p2):
     color_change = ((cos)*255, (sin)*255, (tan)*255)
     return color_change
 
+def rainbow_loop(color):
+    b = color[0]
+    g = color[1]
+    r = color[2]
+    if (r == 255) and (r > g):
+        g += 51
+    elif (g == 255) and (r > 0):
+        r -= 51
+    elif (g == 255) and (g > b):
+        b += 51
+    elif (b == 255) and (g > 0):
+        g -= 51
+    elif (b == 255) and (b > r):
+        r += 51
+    elif (r == 255) and (b > 0):
+        b -= 51
+    return (b, g, r)
 
 def paint(output, points):
     # draws a straight lines on image depending on the location
-    color = (255, 255, 255)
+    # color = (255, 255, 255)
+    # For rainbow_loop, set initial color to red
+    color = (0, 0, 255)
     thickness = 5
     # we need at least 2 points
     if len(points) > 2:
         for i in range(len(points)-2):
             p1, p2 = points[i], points[i+1]
-            color_change = get_coord_change(p1, p2)
-            color2 = np.add(color, color_change)/2
+            #color_change = get_coord_change(p1, p2)
+            #color2 = np.add(color, color_change)/2
+            # For rainbow_loop, set color2 to next color in spectrum
+            color2 = rainbow_loop(color)
+            print("Color 1: {}".format(color))
+            print("Color 2: {}".format(color2))
             start_point = tuple(p1)
             end_point = tuple(p2)
             # simple line
@@ -86,7 +108,7 @@ def custom_smooth_line(output, p1, p2):
 
 def parse(source, method):
     """
-    reads in the video input and call tracking on each frame 
+    reads in the video input and call tracking on each frame
     """
     cv2.namedWindow("output")
     cap = cv2.VideoCapture(0)
@@ -101,7 +123,7 @@ def parse(source, method):
     while success:
         # cv2.imwrite("frame%d.jpg" % count, image)  # save frame as JPEG file
         # frames.append(output)
-        point = lightpainting(method, image)
+        point = point_tracking(method, image)
         # don't add if point is (0,0)
         if not(np.sum(point) == 0):
             points.append(point)
@@ -113,7 +135,7 @@ def parse(source, method):
         key = cv2.waitKey(20)
         if key == 27 or key == ord('q'):  # exit on ESC or q
             break
-        if len(points) > 25:
+        if len(points) > 30:
             points.pop(0)
     cv2.destroyWindow("output")
     cap.release()
