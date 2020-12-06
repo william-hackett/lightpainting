@@ -76,34 +76,46 @@ class Painting():
                     elif len(self.points[pt_group]) > 0:
                         p2 = self.points[pt_group][-1]
                         distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-                        # print(distance)
+                        # print("Distance: {}".format(distance))
                         if distance < min_distance and distance < threshold and not group_assigned[pt_group]:
                             closest_group = pt_group
                             center_assigned[i] = 1
                 if closest_group is not None:
                     self.points[closest_group].append(p1)
                     group_assigned[closest_group] = 1
+                    center_assigned[i] = 1
                     # print("Appending")
 
-        # distances = [np.zeros(self.num_objects) for i in repeat(None, len(centers))]
-        # assigned = np.zeros(len(centers))
-        # closest = 0
-        # if self.num_objects == len(centers):
-        #     for pt_group in range(self.num_objects):
-        #         min_distance = math.inf
-        #         for i in range(centers):
-        #             p1 = centers[i]
-        #             if not(np.sum(p1) == 0):
-        #                 p2 = self.points[pt_group][-1]
-        #                 distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-        #                 distances[i][pt_group] = distance
-        #                 if distance < min_distance:
-        #                     min_distance = distance
-        #                     closest = i
-        #             assigned[i] = 1
-        #             self.points[pt_group].append(centers[closest])
-        # else:
-        #     for p1 in centers:
+        if np.count_nonzero(center_assigned) < len(centers):
+            for pt_group in range(self.num_objects):
+                if len(self.points[pt_group]) > 0 and group_assigned[pt_group] == 0:
+                    self.points[pt_group].pop(0)
+
+
+        # Approach 2
+        # center_assigned = [None for i in repeat(None, len(centers))]
+        # distances = [[math.inf for i in repeat(None, self.num_objects)] for j in repeat(None, len(centers))]
+        # min_distance = math.inf
+        # for pt_group in range(self.num_objects):
+        #     for c in range(len(centers)):
+        #         p1 = centers[c]
+        #         if not(np.sum(p1) == 0):
+        #             if not self.points[pt_group]:
+        #                 if not center_assigned[c]:
+        #                     self.points[pt_group].append(p1)
+        #                     center_assigned[c] = -1
+        #                 break
+        #             p2 = self.points[pt_group][-1]
+        #             distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+        #             distances[c][pt_group] = distance
+        #             if distance < min_distance:
+        #                 min_distance = distance
+        #                 center_assigned[c] = pt_group
+        # for i in range(len(center_assigned)):
+        #     assign = center_assigned[i]
+        #     if assign is not None:
+        #         if assign > -1:
+        #             self.points[assign].append(centers[i])
 
 
 
@@ -197,10 +209,11 @@ class Painting():
             # frames.append(output)
             centers = self.point_tracking()
             # don't add if point is (0,0)
-            self.assign_points(centers)
-            # for point in centers:
-            #     if not(np.sum(point) == 0):
-            #         self.points.append(point)
+            if self.num_objects > 1:
+                self.assign_points(centers)
+            else:
+                if not(np.sum(centers) == 0):
+                    self.points[0].append(centers[0])
             output = self.paint()
             output = cv2.flip(output, 1)
             cv2.imshow("output", output)
