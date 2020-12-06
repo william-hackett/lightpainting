@@ -1,0 +1,2 @@
+wget -O models/cross-hands.cfg https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.cfg
+wget -O models/cross-hands.weights https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.weights
