@@ -86,11 +86,14 @@ def track_yolo(img):
     img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 
     width, height, inference_time, results = yolo.inference(img)
-    center = [0, 0]
+    # center = [0, 0]
+    centers = []
     if len(results) > 0:
         for detection in results:
             id, name, confidence, x, y, w, h = detection
             cx = x + (w / 2)
             cy = y + (h / 2)
-            center = np.asarray([cx*2, cy*2], dtype=np.float32)
-    return center
+            centers.append(np.asarray([cx*2, cy*2], dtype=np.float32))
+    if len(results) == 0:
+        centers.append((0, 0))
+    return centers
