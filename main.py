@@ -21,6 +21,7 @@ import cv2
 import numpy as np
 from tracking import track_green, track_yolo, init_yolo
 import math
+from itertools import repeat
 # from brush import hat, hat_img, radial_hat
 WIDTH = 1280
 HEIGHT = 720
@@ -42,8 +43,8 @@ class Painting():
         self.source = source
         self.curr_frame = None
         self.frames = []
-        self.points = []
-        self.start_color = (0, 0, 255)
+        self.points = [[] for i in repeat(None, num_objects)]
+        self.start_color = [(0, 0, 255) for i in repeat(None, num_objects)]
         self.num_objects = num_objects
 
         if method == "yolo":
@@ -55,7 +56,56 @@ class Painting():
             centers = track_green(img, self.num_objects)
         elif self.method == "yolo":
             centers = track_yolo(img)
+        print("Tracking {} objects".format(num_objects))
+        print(centers)
         return centers
+
+    def assign_points(self, centers):
+        group_assigned = np.zeros(self.num_objects)
+        center_assigned = np.zeros(len(centers))
+        for i in range(len(centers)):
+            p1 = centers[i]
+            if not(np.sum(p1) == 0):
+                closest_group = None
+                min_distance = math.inf
+                threshold = 100
+                for pt_group in range(self.num_objects):
+                    if not self.points[pt_group] and not center_assigned[i]:
+                        closest_group = pt_group
+                        center_assigned[i] = 1
+                    elif len(self.points[pt_group]) > 0:
+                        p2 = self.points[pt_group][-1]
+                        distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+                        print(distance)
+                        if distance < min_distance and distance < threshold and not group_assigned[pt_group]:
+                            closest_group = pt_group
+                            center_assigned[i] = 1
+                if closest_group is not None:
+                    self.points[closest_group].append(p1)
+                    group_assigned[closest_group] = 1
+                    print("Appending")
+
+        # distances = [np.zeros(self.num_objects) for i in repeat(None, len(centers))]
+        # assigned = np.zeros(len(centers))
+        # closest = 0
+        # if self.num_objects == len(centers):
+        #     for pt_group in range(self.num_objects):
+        #         min_distance = math.inf
+        #         for i in range(centers):
+        #             p1 = centers[i]
+        #             if not(np.sum(p1) == 0):
+        #                 p2 = self.points[pt_group][-1]
+        #                 distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+        #                 distances[i][pt_group] = distance
+        #                 if distance < min_distance:
+        #                     min_distance = distance
+        #                     closest = i
+        #             assigned[i] = 1
+        #             self.points[pt_group].append(centers[closest])
+        # else:
+        #     for p1 in centers:
+
+
 
     def rainbow_loop(self, color):
         b = color[0]
@@ -75,26 +125,27 @@ class Painting():
             b -= 15
         return (b, g, r)
 
-    def paint(self, color):
+    def paint(self):
         # Draws a straight line on image depending on the location
-        # For rainbow_loop, set initial color
-        color = self.start_color
         output = self.curr_frame
         # we need at least 2 points
-        if len(self.points) > 2:
-            for i in range(len(self.points)-2):
-                p1, p2 = self.points[i], self.points[i+1]
-                # For rainbow_loop, set color2 to next color in spectrum
-                color2 = self.rainbow_loop(color)
-                # start_point = tuple(p1)
-                # end_point = tuple(p2)
-                # Simple line
-                # output = cv2.line(output, start_point, end_point, color, thickness)
-                # Custom circle drawing function
-                output = self.custom_line(output, p1, p2, color, color2)
-                # output = self.custom_smooth_line(output, p1, p2)
-                color = color2
-            self.start_color = self.rainbow_loop(self.start_color)
+        for pt_group in range(self.num_objects):
+            # For rainbow_loop, set initial color
+            color = self.start_color[pt_group]
+            if len(self.points[pt_group]) > 2:
+                for i in range(len(self.points[pt_group])-2):
+                    p1, p2 = self.points[pt_group][i], self.points[pt_group][i+1]
+                    # For rainbow_loop, set color2 to next color in spectrum
+                    color2 = self.rainbow_loop(color)
+                    # start_point = tuple(p1)
+                    # end_point = tuple(p2)
+                    # Simple line
+                    # output = cv2.line(output, start_point, end_point, color, thickness)
+                    # Custom circle drawing function
+                    output = self.custom_line(output, p1, p2, color, color2)
+                    # output = self.custom_smooth_line(output, p1, p2)
+                    color = color2
+                self.start_color[pt_group] = self.rainbow_loop(self.start_color[pt_group])
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
@@ -146,19 +197,21 @@ class Painting():
             # frames.append(output)
             centers = self.point_tracking()
             # don't add if point is (0,0)
-            for point in centers:
-                if not(np.sum(point) == 0):
-                    self.points.append(point)
-                output = self.paint(self.start_color)
-                output = cv2.flip(output, 1)
-                cv2.imshow("output", output)
-                success, self.curr_frame = cap.read()
-                # print('Read a new frame: ', success)
-                key = cv2.waitKey(20)
-                if key == 27 or key == ord('q'):  # exit on ESC or q
-                    break
-                if len(self.points) > 30:
-                    self.points.pop(0)
+            self.assign_points(centers)
+            # for point in centers:
+            #     if not(np.sum(point) == 0):
+            #         self.points.append(point)
+            output = self.paint()
+            output = cv2.flip(output, 1)
+            cv2.imshow("output", output)
+            success, self.curr_frame = cap.read()
+            # print('Read a new frame: ', success)
+            key = cv2.waitKey(20)
+            if key == 27 or key == ord('q'):  # exit on ESC or q
+                break
+            for pt_group in range(self.num_objects):
+                if len(self.points[pt_group]) > 30:
+                    self.points[pt_group].pop(0)
         cv2.destroyWindow("output")
         cap.release()
 
@@ -169,11 +222,11 @@ if __name__ == '__main__':
                         help="Indicates tracking method. Default is green.")
     parser.add_argument("-s", "--source", type=str, default=0,
                         help="Name of the source video with extension")
-
-    parser.add_argument("-o", "--objects", type=str, default="",
+    parser.add_argument("-o", "--objects", type=int, default=1,
                         help="Number of objects to track")
 
     args = vars(parser.parse_args())
+
     if args["method"] == "green":
         method = "green"
     elif args["method"] == "yolo":
@@ -182,11 +235,7 @@ if __name__ == '__main__':
         print("Input --method is not a valid option." +
               " Defaulting to green tracking.")
         method = "green"
-
-    if not args["objects"]:
-        num_objects = 1
-    else:
-        num_objects = args["objects"]
     source = args["source"]
-    painter = Painting(method, source, int(num_objects))
+    num_objects = args["objects"]
+    painter = Painting(method, source, num_objects)
     painter.parse()
