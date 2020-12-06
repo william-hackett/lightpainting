@@ -17,20 +17,13 @@ import cv2
 import imutils
 from yolo import YOLO
 import subprocess
-import shlex
-
 
 def init_yolo():
     global yolo
     config = "models/cross-hands.cfg"
     weights = "models/cross-hands.weights"
     if not(os.path.isfile(config) and os.path.isfile(weights)):
-        proc1 = "wget -O " + config + \
-            " https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.cfg"
-        proc2 = "wget -O " + weights + \
-            " https://github.com/cansik/yolo-hand-detection/releases/download/pretrained/cross-hands.weights"
-        subprocess.call(shlex.split(proc1))
-        subprocess.call(shlex.split(proc2))
+        subprocess.call("./models/download-some-models.sh", shell=True)
     yolo = YOLO(config, weights, ["hand"])
     yolo.size = int(256)
     yolo.confidence = float(0.3)
