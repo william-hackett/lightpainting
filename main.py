@@ -56,8 +56,8 @@ class Painting():
             centers = track_green(img, self.num_objects)
         elif self.method == "yolo":
             centers = track_yolo(img)
-        print("Tracking {} objects".format(num_objects))
-        print(centers)
+        # print("Tracking {} objects".format(num_objects))
+        # print(centers)
         return centers
 
     def assign_points(self, centers):
@@ -76,14 +76,14 @@ class Painting():
                     elif len(self.points[pt_group]) > 0:
                         p2 = self.points[pt_group][-1]
                         distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-                        print(distance)
+                        # print(distance)
                         if distance < min_distance and distance < threshold and not group_assigned[pt_group]:
                             closest_group = pt_group
                             center_assigned[i] = 1
                 if closest_group is not None:
                     self.points[closest_group].append(p1)
                     group_assigned[closest_group] = 1
-                    print("Appending")
+                    # print("Appending")
 
         # distances = [np.zeros(self.num_objects) for i in repeat(None, len(centers))]
         # assigned = np.zeros(len(centers))
