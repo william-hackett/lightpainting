@@ -57,17 +57,20 @@ class Painting():
         elif self.method == "yolo":
             centers = track_yolo(img)
         # print("Tracking {} objects".format(num_objects))
-        # print(centers)
         return centers
 
     def assign_points(self, centers):
+        """
+        group points corresponding to each object
+        :param: centers a list of points corresponding to each object
+        """
         group_assigned = np.zeros(self.num_objects)
         center_assigned = np.zeros(len(centers))
+
         for i in range(len(centers)):
             p1 = centers[i]
             if not(np.sum(p1) == 0):
                 closest_group = None
-                min_distance = math.inf
                 threshold = 100
                 for pt_group in range(self.num_objects):
                     if not self.points[pt_group] and not center_assigned[i]:
@@ -75,9 +78,9 @@ class Painting():
                         center_assigned[i] = 1
                     elif len(self.points[pt_group]) > 0:
                         p2 = self.points[pt_group][-1]
-                        distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-                        # print("Distance: {}".format(distance))
-                        if distance < min_distance and distance < threshold and not group_assigned[pt_group]:
+                        distance = math.sqrt(
+                            ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+                        if distance < threshold and not group_assigned[pt_group]:
                             closest_group = pt_group
                             center_assigned[i] = 1
                 if closest_group is not None:
@@ -90,7 +93,6 @@ class Painting():
             for pt_group in range(self.num_objects):
                 if len(self.points[pt_group]) > 0 and group_assigned[pt_group] == 0:
                     self.points[pt_group].pop(0)
-
 
         # Approach 2
         # center_assigned = [None for i in repeat(None, len(centers))]
@@ -116,8 +118,6 @@ class Painting():
         #     if assign is not None:
         #         if assign > -1:
         #             self.points[assign].append(centers[i])
-
-
 
     def rainbow_loop(self, color):
         b = color[0]
@@ -157,7 +157,8 @@ class Painting():
                     output = self.custom_line(output, p1, p2, color, color2)
                     # output = self.custom_smooth_line(output, p1, p2)
                     color = color2
-                self.start_color[pt_group] = self.rainbow_loop(self.start_color[pt_group])
+                self.start_color[pt_group] = self.rainbow_loop(
+                    self.start_color[pt_group])
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
@@ -209,8 +210,10 @@ class Painting():
             # frames.append(output)
             centers = self.point_tracking()
             # don't add if point is (0,0)
+            # multiple objects to track, assign centers to groups
             if self.num_objects > 1:
                 self.assign_points(centers)
+            # single object to track
             else:
                 if not(np.sum(centers) == 0):
                     self.points[0].append(centers[0])
