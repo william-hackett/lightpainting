@@ -71,19 +71,21 @@ class Painting():
             p1 = centers[i]
             if not(np.sum(p1) == 0):
                 closest_group = None
-                # threshold = 100
+                # stores distance between current center and each group
                 distance_to_group = {}
                 for pt_group in range(self.num_objects):
                     # if center not grouped and current group is empty, assign point to group
                     if not self.points[pt_group] and not center_assigned[i]:
                         closest_group = pt_group
                         center_assigned[i] = 1
+                    # if center is not empty, calculate center distance from group
                     elif len(self.points[pt_group]) > 0:
                         p2 = self.points[pt_group][-1]
                         distance = math.sqrt(
                             ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2))
                         distance_to_group[pt_group] = distance
                 if closest_group is None:
+                    # assign the group with min distance to center as closest group
                     closest_group = min(distance_to_group,
                                         key=distance_to_group.get)
                 self.points[closest_group].append(p1)
