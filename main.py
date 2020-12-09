@@ -74,22 +74,33 @@ class Painting():
         """
         # Approach 4: simple distance, hardcoded with only 2 trackings, no for loops
         MIN_DIST = 30  # if the centers are too close together, they are prob the same object
+        group_assigned = [False, False]
         if np.sum(centers[0]) != 0:
             # if we have detacted 2 objects already
             if self.mult == True:
                 p1 = centers[0]
-                g1 = self.points[0][-1]
-                g2 = self.points[1][-1]
-                distance1 = np.linalg.norm(p1-g1)
-                distance2 = np.linalg.norm(p1-g2)
+                if len(self.points[0]) > 0:
+                    g1 = self.points[0][-1]
+                    distance1 = np.linalg.norm(p1-g1)
+                else:
+                    distance1 = MIN_DIST + 1
+
+                if len(self.points[1]) > 0:
+                    g2 = self.points[1][-1]
+                    distance2 = np.linalg.norm(p1-g2)
+                else:
+                    distance2 = MIN_DIST + 1
+
                 if distance1 <= distance2:
                     self.points[0].append(p1)
                     if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         self.points[1].append(centers[1])
+                        group_assigned[1] = True
                 else:
                     self.points[1].append(p1)
                     if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         self.points[0].append(centers[1])
+                        group_assigned[0] = True
             # if we haven't detacted multiple objects yet
             else:
                 if len(centers) == 1:
@@ -98,8 +109,15 @@ class Painting():
                     if np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         for i in range(len(centers)):
                             self.points[i].append(centers[i])
+                            group_assigned[i] = True
                         # now we can start detecting multiple objects!
                         self.mult = True
+
+        for i in range(2):
+            if group_assigned[i] == False and len(self.points[i]) > 0:
+                self.points[i].pop(0)
+            if len(self.points[i]) == 0:
+                self.mult = False
 
         # Approach 3: simple distance with base case, n-multitracking enabled
         # if self.mult:
