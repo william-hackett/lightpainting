@@ -16,6 +16,7 @@ To run tracking on an object using YOLO
     python main.py --method (or -m) yolo --source (or -s) <source_file_path>
 
 '''
+import time
 import argparse
 import cv2
 import numpy as np
@@ -25,7 +26,6 @@ from itertools import repeat
 # from brush import hat, hat_img, radial_hat
 WIDTH = 1280
 HEIGHT = 720
-import time
 
 
 class Painting():
@@ -45,7 +45,8 @@ class Painting():
         self.curr_frame = None
         self.frames = []
         # initialize with num_objects points at different sections of the screen
-        self.points = [[np.asarray([i*WIDTH//num_objects,i*HEIGHT//num_objects], dtype=np.float32)] for i in range(num_objects)]
+        self.points = [[np.asarray(
+            [i*WIDTH//num_objects, i*HEIGHT//num_objects], dtype=np.float32)] for i in range(num_objects)]
         self.start_color = [(0, 0, 255) for i in repeat(None, num_objects)]
         self.num_objects = num_objects
         if method == "yolo":
@@ -65,15 +66,16 @@ class Painting():
         group points corresponding to each object
         :param: centers a list of points corresponding to each object
         """
-        #Approach 3: simple distance with base case
+        # Approach 3: simple distance with base case
+        centers = np.array(centers)
         for i in range(len(centers)):
             p1 = centers[i]
             if np.sum(p1) == 0:
                 break
             g1 = self.points[0][-1]
             g2 = self.points[1][-1]
-            distance1 = math.sqrt(((p1[0] - g1[0]) ** 2) + ((p1[1] - g1[1]) ** 2))
-            distance2 = math.sqrt(((p1[0] - g2[0]) ** 2) + ((p1[1] - g2[1]) ** 2))
+            distance1 = np.linalg.norm(p1-g1)
+            distance2 = np.linalg.norm(p1-g2)
             if distance1 <= distance2:
                 self.points[0].append(p1)
             else:
@@ -167,7 +169,7 @@ class Painting():
             color = self.start_color[pt_group]
             if len(self.points[pt_group]) > 2:
                 # start paint with 1 to avoid drawing dummy points.
-                for i in range(1,len(self.points[pt_group])-2):
+                for i in range(1, len(self.points[pt_group])-2):
                     p1, p2 = self.points[pt_group][i], self.points[pt_group][i+1]
                     # For rainbow_loop, set color2 to next color in spectrum
                     color2 = self.rainbow_loop(color)
