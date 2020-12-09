@@ -18,6 +18,8 @@ import imutils
 from yolo import YOLO
 import subprocess
 
+yolo, backSub = None, None
+
 def init_yolo():
     global yolo
     config = "models/cross-hands.cfg"
@@ -28,6 +30,31 @@ def init_yolo():
     yolo.size = int(256)
     yolo.confidence = float(0.3)
 
+def init_motion():
+    global backSub
+    backSub = cv2.createBackgroundSubtractorMOG2()
+
+def track_motion(img, num_objects):
+    mask = backSub.apply(img)
+    mask = cv2.erode(mask, None, iterations=2)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (3,3), 0)
+    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    items = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = items
+    centers = []
+    if len(contours) > 0:
+        contours = imutils.grab_contours(items)
+        contours = sorted(contours, key=cv2.contourArea)
+        for i in range(min(num_objects, len(contours))):
+            contour = contours[i]
+            rect = cv2.minAreaRect(contour)
+            box = cv2.boxPoints(rect)
+            center = np.mean(box, axis=0)
+            centers.append(center)
+    if len(centers) == 0:
+        centers.append((0, 0))
+    return centers  # (x,y) 
 
 def track_green(img, num_objects):
     '''
