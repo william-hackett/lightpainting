@@ -114,7 +114,7 @@ class Painting():
                         self.mult = True
 
         for i in range(2):
-            if group_assigned[i] == False and len(self.points[i]) > 0:
+            if group_assigned[i] == False and len(self.points[i]) > 0 and self.mult == True:
                 self.points[i].pop(0)
             if len(self.points[i]) == 0:
                 self.mult = False
@@ -307,7 +307,7 @@ class Painting():
             if key == 27 or key == ord('q'):  # exit on ESC or q
                 break
             for pt_group in range(self.num_objects):
-                if len(self.points[pt_group]) > 20:
+                if len(self.points[pt_group]) > 40:
                     self.points[pt_group].pop(0)
         cv2.destroyWindow("output")
         cap.release()
