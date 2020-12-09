@@ -25,6 +25,7 @@ from itertools import repeat
 # from brush import hat, hat_img, radial_hat
 WIDTH = 1280
 HEIGHT = 720
+import time
 
 
 class Painting():
@@ -43,10 +44,10 @@ class Painting():
         self.source = source
         self.curr_frame = None
         self.frames = []
-        self.points = [[] for i in repeat(None, num_objects)]
+        # initialize with num_objects points at different sections of the screen
+        self.points = [[np.asarray([i*WIDTH//num_objects,i*HEIGHT//num_objects], dtype=np.float32)] for i in range(num_objects)]
         self.start_color = [(0, 0, 255) for i in repeat(None, num_objects)]
         self.num_objects = num_objects
-
         if method == "yolo":
             init_yolo()
 
@@ -64,37 +65,55 @@ class Painting():
         group points corresponding to each object
         :param: centers a list of points corresponding to each object
         """
-        group_assigned = np.zeros(self.num_objects)
-        center_assigned = np.zeros(len(centers))
-
+        #Approach 3: simple distance with base case
         for i in range(len(centers)):
             p1 = centers[i]
-            if not(np.sum(p1) == 0):
-                closest_group = None
-                # stores distance between current center and each group
-                distance_to_group = {}
-                for pt_group in range(self.num_objects):
-                    # if center not grouped and current group is empty, assign point to group
-                    if not self.points[pt_group] and not center_assigned[i]:
-                        closest_group = pt_group
-                        center_assigned[i] = 1
-                    # if center is not empty, calculate center distance from group
-                    elif len(self.points[pt_group]) > 0:
-                        p2 = self.points[pt_group][-1]
-                        distance = math.sqrt(
-                            ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2))
-                        distance_to_group[pt_group] = distance
-                if closest_group is None:
-                    # assign the group with min distance to center as closest group
-                    closest_group = min(distance_to_group,
-                                        key=distance_to_group.get)
-                self.points[closest_group].append(p1)
-                group_assigned[closest_group] = 1
-                center_assigned[i] = 1
-        if np.count_nonzero(center_assigned) < len(centers):
-            for pt_group in range(self.num_objects):
-                if len(self.points[pt_group]) > 0 and group_assigned[pt_group] == 0:
-                    self.points[pt_group].pop(0)
+            if np.sum(p1) == 0:
+                break
+            g1 = self.points[0][-1]
+            g2 = self.points[1][-1]
+            distance1 = math.sqrt(((p1[0] - g1[0]) ** 2) + ((p1[1] - g1[1]) ** 2))
+            distance2 = math.sqrt(((p1[0] - g2[0]) ** 2) + ((p1[1] - g2[1]) ** 2))
+            if distance1 <= distance2:
+                self.points[0].append(p1)
+            else:
+                self.points[1].append(p1)
+
+        # group_assigned = [0]*2
+        # center_assigned = [0]*len(centers)
+
+        # for i in range(len(centers)):
+        #     p1 = centers[i]
+        #     if not(np.sum(p1) == 0):
+        #         closest_group = None
+        #         # stores distance between current center and each group
+        #         distance_to_group = {}
+        #         for pt_group in range(self.num_objects):
+        #             # if center not grouped and current group is empty, assign point to group
+        #             if not self.points[pt_group] and not center_assigned[i]:
+        #                 closest_group = pt_group
+        #                 center_assigned[i] = 1
+        #             # if center is not empty, calculate center distance from group
+        #             elif len(self.points[pt_group]) > 0:
+        #                 p2 = self.points[pt_group][-1]
+        #                 distance = math.sqrt(
+        #                     ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2))
+        #                 distance_to_group[pt_group] = distance
+        #         if closest_group is None:
+        #             # assign the group with min distance to center as closest group
+        #             closest_group = min(distance_to_group,
+        #                                 key=distance_to_group.get)
+        #         self.points[closest_group].append(p1)
+        #         group_assigned[closest_group] = 1
+        #         center_assigned[i] = 1
+        # if np.count_nonzero(center_assigned) < len(centers):
+        #     for pt_group in range(self.num_objects):
+        #         if len(self.points[pt_group]) > 0 and group_assigned[pt_group] == 0:
+        #             self.points[pt_group].pop(0)
+
+        # start_time = time.time()
+
+        # print("--- %s seconds ---" % (time.time() - start_time))
 
         # Approach 2
         # center_assigned = [None for i in repeat(None, len(centers))]
@@ -147,7 +166,8 @@ class Painting():
             # For rainbow_loop, set initial color
             color = self.start_color[pt_group]
             if len(self.points[pt_group]) > 2:
-                for i in range(len(self.points[pt_group])-2):
+                # start paint with 1 to avoid drawing dummy points.
+                for i in range(1,len(self.points[pt_group])-2):
                     p1, p2 = self.points[pt_group][i], self.points[pt_group][i+1]
                     # For rainbow_loop, set color2 to next color in spectrum
                     color2 = self.rainbow_loop(color)
