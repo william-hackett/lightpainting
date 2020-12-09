@@ -62,7 +62,8 @@ class Painting():
         elif self.method == "yolo":
             centers = track_yolo(img)
         elif self.method == "motion":
-            centers = track_motion(img,  self.num_objects)
+            centers, thresh = track_motion(img,  self.num_objects)
+            # cv2.imshow("threshold view", thresh) #in order to view the masked filter
         # print("Tracking {} objects".format(num_objects))
         return centers
 

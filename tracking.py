@@ -36,16 +36,20 @@ def init_motion():
 
 def track_motion(img, num_objects):
     mask = backSub.apply(img)
-    mask = cv2.erode(mask, None, iterations=2)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (3,3), 0)
-    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    mask = cv2.GaussianBlur(gray, (9,9), 0)
+    mask = cv2.bilateralFilter(mask,9,75,75)
+    kernel = np.ones((9, 9), np.uint8())
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.erode(mask, None, iterations=4)
+    mask = cv2.dilate(mask, None, iterations=4)
+    thresh = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     items = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours, hierarchy = items
     centers = []
     if len(contours) > 0:
         contours = imutils.grab_contours(items)
-        contours = sorted(contours, key=cv2.contourArea)
+        contours = sorted(contours, key=cv2.contourArea)[::-1]
         for i in range(min(num_objects, len(contours))):
             contour = contours[i]
             rect = cv2.minAreaRect(contour)
@@ -54,7 +58,7 @@ def track_motion(img, num_objects):
             centers.append(center)
     if len(centers) == 0:
         centers.append((0, 0))
-    return centers  # (x,y) 
+    return centers, thresh  # (x,y) 
 
 def track_green(img, num_objects):
     '''
@@ -84,7 +88,8 @@ def track_green(img, num_objects):
     # print("number of contours found:", len(contours))
     if len(contours) > 0:
         contours = imutils.grab_contours(items)
-        contours = sorted(contours, key=cv2.contourArea)
+        # areas are sorted in increasing order, we must reverse!
+        contours = sorted(contours, key=cv2.contourArea)[::-1]
         for i in range(min(num_objects, len(contours))):
             contour = contours[i]
             rect = cv2.minAreaRect(contour)
