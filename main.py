@@ -44,8 +44,10 @@ class Painting():
         self.source = source
         self.curr_frame = None
         self.frames = []
-        # initialize with num_objects points at different sections of the screen
-        self.points = [[np.asarray([i*WIDTH//num_objects,i*HEIGHT//num_objects], dtype=np.float32)] for i in range(num_objects)]
+        # Approach 3: initialize pts with dummy points at different sections of the screen
+        # self.points = [[np.asarray([i*WIDTH//(num_objects),i*HEIGHT//(num_objects)], dtype=np.float32)] for i in range(num_objects)]
+        self.points = [[] for i in range(num_objects)]
+        self.mult = False
         self.start_color = [(0, 0, 255) for i in repeat(None, num_objects)]
         self.num_objects = num_objects
         if method == "yolo":
@@ -60,24 +62,64 @@ class Painting():
         # print("Tracking {} objects".format(num_objects))
         return centers
 
+    def distance(self, p1, p2):
+        return math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+
     def assign_points(self, centers):
         """
         group points corresponding to each object
         :param: centers a list of points corresponding to each object
         """
-        #Approach 3: simple distance with base case
-        for i in range(len(centers)):
-            p1 = centers[i]
-            if np.sum(p1) == 0:
-                break
-            g1 = self.points[0][-1]
-            g2 = self.points[1][-1]
-            distance1 = math.sqrt(((p1[0] - g1[0]) ** 2) + ((p1[1] - g1[1]) ** 2))
-            distance2 = math.sqrt(((p1[0] - g2[0]) ** 2) + ((p1[1] - g2[1]) ** 2))
-            if distance1 <= distance2:
-                self.points[0].append(p1)
+        #Approach 4: simple distance, hardcoded with only 2 trackings, no for loops
+        MIN_DIST = 30 #if the centers are too close together, they are prob the same object
+        if np.sum(centers[0]) != 0:
+            # if we have detacted 2 objects already
+            if self.mult ==True:
+                p1 = centers[0]
+                g1 = self.points[0][-1]
+                g2 = self.points[1][-1]
+                distance1 = self.distance(p1,g1)
+                distance2 = self.distance(p1,g2)
+                if distance1 <= distance2:
+                    self.points[0].append(p1)
+                    if len(centers) > 1 and self.distance(centers[0], centers[1]) > MIN_DIST: self.points[1].append(centers[1])
+                else:
+                    self.points[1].append(p1)
+                    if len(centers) > 1 and self.distance(centers[0], centers[1]) > MIN_DIST: self.points[0].append(centers[1])
+            # if we haven't detacted multiple objects yet
             else:
-                self.points[1].append(p1)
+                if len(centers) == 1:
+                    self.points[0].append(centers[0])
+                elif len(centers) > 1:
+                    if self.distance(centers[0], centers[1]) > MIN_DIST:
+                        for i in range(len(centers)):
+                            self.points[i].append(centers[i])
+                        # now we can start detecting multiple objects!
+                        self.mult = True
+
+        #Approach 3: simple distance with base case, n-multitracking enabled
+        # if self.mult:
+        #     for i in range(len(centers)):
+        #         p1 = centers[i]
+        #         if np.sum(p1) == 0:
+        #             break
+        #         mindist_index = 0
+        #         mindist = float("inf")
+        #         for i in range(len(self.points)):
+        #             g = self.points[i][-1]
+        #             dist = math.sqrt(((p1[0] - g[0]) ** 2) + ((p1[1] - g[1]) ** 2))
+        #             if dist < mindist:
+        #                 mindist = dist
+        #                 mindist_index = i
+        #         self.points[mindist_index].append(p1)
+        # if len(centers) > 1 and self.mult ==False:
+        #     for i in range(len(centers)):
+        #         self.points[i].append(centers[i])
+        #     self.mult = True
+        # # if we are tracking only one object yet, append to first group
+        # if len(centers) == 1 and self.mult ==False:
+        #     if np.sum(centers[0]) != 0:
+        #         self.points[0].append(centers[0])
 
         # group_assigned = [0]*2
         # center_assigned = [0]*len(centers)
@@ -111,9 +153,7 @@ class Painting():
         #         if len(self.points[pt_group]) > 0 and group_assigned[pt_group] == 0:
         #             self.points[pt_group].pop(0)
 
-        # start_time = time.time()
 
-        # print("--- %s seconds ---" % (time.time() - start_time))
 
         # Approach 2
         # center_assigned = [None for i in repeat(None, len(centers))]
@@ -167,12 +207,10 @@ class Painting():
             color = self.start_color[pt_group]
             if len(self.points[pt_group]) > 2:
                 # start paint with 1 to avoid drawing dummy points.
-                for i in range(1,len(self.points[pt_group])-2):
+                for i in range(len(self.points[pt_group])-2):
                     p1, p2 = self.points[pt_group][i], self.points[pt_group][i+1]
                     # For rainbow_loop, set color2 to next color in spectrum
                     color2 = self.rainbow_loop(color)
-                    # start_point = tuple(p1)
-                    # end_point = tuple(p2)
                     # Simple line
                     # output = cv2.line(output, start_point, end_point, color, thickness)
                     # Custom circle drawing function
@@ -185,14 +223,15 @@ class Painting():
 
     def custom_line(self, output, p1, p2, c1, c2):
         # Draws circles between two points using a color gradient
-        distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
+        distance = self.distance(p1,p2)
         # radius is between 7 and 4 depending on the distance
-        thickness = int(7 - (distance*3/output.shape[1]))
-        points_on_line = np.linspace(p1, p2, int(distance//2))
+        # thickness = int(7 - (distance*3/output.shape[1]))
+        thickness = 5
+        points_on_line = np.linspace(p1, p2, int(distance//4))
         for i in range(len(points_on_line)):
             alpha = i/len(points_on_line)
             point = points_on_line[i]
-            strip = (np.asarray(c1)*(1-alpha) + np.asarray(c2)*(alpha))
+            strip = (np.asarray(c1)*(1.-alpha) + np.asarray(c2)*(alpha))
             output = cv2.circle(output, tuple(point), thickness, strip, -1)
         return output
 
@@ -248,7 +287,7 @@ class Painting():
             if key == 27 or key == ord('q'):  # exit on ESC or q
                 break
             for pt_group in range(self.num_objects):
-                if len(self.points[pt_group]) > 30:
+                if len(self.points[pt_group]) > 20:
                     self.points[pt_group].pop(0)
         cv2.destroyWindow("output")
         cap.release()
