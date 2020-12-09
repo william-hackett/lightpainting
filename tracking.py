@@ -32,7 +32,7 @@ def init_yolo():
 
 def init_motion():
     global backSub
-    backSub = cv2.createBackgroundSubtractorMOG2()
+    backSub = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
 
 def track_motion(img, num_objects):
     mask = backSub.apply(img)
