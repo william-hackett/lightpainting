@@ -20,7 +20,7 @@ import time
 import argparse
 import cv2
 import numpy as np
-from tracking import track_green, track_yolo, init_yolo
+from tracking import track_green, track_yolo, init_yolo, init_motion, track_motion
 import math
 from itertools import repeat
 # from brush import hat, hat_img, radial_hat
@@ -52,6 +52,8 @@ class Painting():
         self.num_objects = num_objects
         if method == "yolo":
             init_yolo()
+        elif method == "motion":
+            init_motion()
 
     def point_tracking(self):
         img = self.curr_frame
@@ -59,6 +61,8 @@ class Painting():
             centers = track_green(img, self.num_objects)
         elif self.method == "yolo":
             centers = track_yolo(img)
+        elif self.method == "motion":
+            centers = track_motion(img,  self.num_objects)
         # print("Tracking {} objects".format(num_objects))
         return centers
 
@@ -308,6 +312,8 @@ if __name__ == '__main__':
         method = "green"
     elif args["method"] == "yolo":
         method = "yolo"
+    elif args["method"] == "motion":
+        method = "motion"
     else:
         print("Input --method is not a valid option." +
               " Defaulting to green tracking.")
