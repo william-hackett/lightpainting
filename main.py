@@ -79,18 +79,18 @@ class Painting():
                 distance2 = np.linalg.norm(p1-g2)
                 if distance1 <= distance2:
                     self.points[0].append(p1)
-                    if len(centers) > 1 and self.distance(centers[0], centers[1]) > MIN_DIST:
+                    if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         self.points[1].append(centers[1])
                 else:
                     self.points[1].append(p1)
-                    if len(centers) > 1 and self.distance(centers[0], centers[1]) > MIN_DIST:
+                    if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         self.points[0].append(centers[1])
             # if we haven't detacted multiple objects yet
             else:
                 if len(centers) == 1:
                     self.points[0].append(centers[0])
                 elif len(centers) > 1:
-                    if self.distance(centers[0], centers[1]) > MIN_DIST:
+                    if np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         for i in range(len(centers)):
                             self.points[i].append(centers[i])
                         # now we can start detecting multiple objects!
@@ -220,7 +220,7 @@ class Painting():
 
     def custom_line(self, output, p1, p2, c1, c2):
         # Draws circles between two points using a color gradient
-        distance = self.distance(p1, p2)
+        distance = np.linalg.norm(p1-p2)
         # radius is between 7 and 4 depending on the distance
         # thickness = int(7 - (distance*3/output.shape[1]))
         thickness = 5
