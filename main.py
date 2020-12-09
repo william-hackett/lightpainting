@@ -16,6 +16,7 @@ To run tracking on an object using YOLO
     python main.py --method (or -m) yolo --source (or -s) <source_file_path>
 
 '''
+import time
 import argparse
 import cv2
 import numpy as np
@@ -25,7 +26,6 @@ from itertools import repeat
 # from brush import hat, hat_img, radial_hat
 WIDTH = 1280
 HEIGHT = 720
-import time
 
 
 class Painting():
