@@ -66,42 +66,41 @@ class Painting():
         # print("Tracking {} objects".format(num_objects))
         return centers
 
-    def distance(self, p1, p2):
-        return math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-
     def assign_points(self, centers):
         """
         group points corresponding to each object
         :param: centers a list of points corresponding to each object
         """
-        #Approach 4: simple distance, hardcoded with only 2 trackings, no for loops
-        MIN_DIST = 30 #if the centers are too close together, they are prob the same object
+        # Approach 4: simple distance, hardcoded with only 2 trackings, no for loops
+        MIN_DIST = 30  # if the centers are too close together, they are prob the same object
         if np.sum(centers[0]) != 0:
             # if we have detacted 2 objects already
-            if self.mult ==True:
+            if self.mult == True:
                 p1 = centers[0]
                 g1 = self.points[0][-1]
                 g2 = self.points[1][-1]
-                distance1 = self.distance(p1,g1)
-                distance2 = self.distance(p1,g2)
+                distance1 = np.linalg.norm(p1-g1)
+                distance2 = np.linalg.norm(p1-g2)
                 if distance1 <= distance2:
                     self.points[0].append(p1)
-                    if len(centers) > 1 and self.distance(centers[0], centers[1]) > MIN_DIST: self.points[1].append(centers[1])
+                    if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
+                        self.points[1].append(centers[1])
                 else:
                     self.points[1].append(p1)
-                    if len(centers) > 1 and self.distance(centers[0], centers[1]) > MIN_DIST: self.points[0].append(centers[1])
+                    if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
+                        self.points[0].append(centers[1])
             # if we haven't detacted multiple objects yet
             else:
                 if len(centers) == 1:
                     self.points[0].append(centers[0])
                 elif len(centers) > 1:
-                    if self.distance(centers[0], centers[1]) > MIN_DIST:
+                    if np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         for i in range(len(centers)):
                             self.points[i].append(centers[i])
                         # now we can start detecting multiple objects!
                         self.mult = True
 
-        #Approach 3: simple distance with base case, n-multitracking enabled
+        # Approach 3: simple distance with base case, n-multitracking enabled
         # if self.mult:
         #     for i in range(len(centers)):
         #         p1 = centers[i]
@@ -156,8 +155,6 @@ class Painting():
         #     for pt_group in range(self.num_objects):
         #         if len(self.points[pt_group]) > 0 and group_assigned[pt_group] == 0:
         #             self.points[pt_group].pop(0)
-
-
 
         # Approach 2
         # center_assigned = [None for i in repeat(None, len(centers))]
@@ -227,7 +224,7 @@ class Painting():
 
     def custom_line(self, output, p1, p2, c1, c2):
         # Draws circles between two points using a color gradient
-        distance = self.distance(p1,p2)
+        distance = np.linalg.norm(p1-p2)
         # radius is between 7 and 4 depending on the distance
         # thickness = int(7 - (distance*3/output.shape[1]))
         thickness = 5
