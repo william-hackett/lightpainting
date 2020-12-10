@@ -16,6 +16,7 @@ To run tracking on an object using YOLO
     python main.py --method (or -m) yolo --source (or -s) <source_file_path>
 
 '''
+import os
 import time
 import argparse
 import cv2
@@ -40,10 +41,10 @@ class Painting():
     - self.frames is a list of painted frames for saving a video
     - self.points is the current list of point lists representing tracked paths
     - self.mult is a Boolean indicating whether we are tracking multiple objs
-    - self.start_color is a list of RGB tuples containing path starting colors
+    - self.start_color is a list of BGR tuples containing path starting colors
     """
 
-    def __init__(self, method, source, num_objects, shift):
+    def __init__(self, method, source, num_objects, shift, color, save):
         # Initialize the tracking method
         self.method = method
         # Initialize the video source
@@ -54,6 +55,8 @@ class Painting():
         self.shift = shift
         # Vector by which to shift each point to simulate motion to the right
         self.shift_vec = np.array([-10, 0])
+        # Indicates whether to save output as video
+        self.save = save
         # Holds the current frame
         self.curr_frame = None
         # Store a list of painted frames in order to save video
@@ -67,8 +70,12 @@ class Painting():
         self.points = [[] for i in range(num_objects)]
         # Boolean indicating whether multiple objects have been detected
         self.mult = False
-        # List of RBG tuples indicating the starting color for each object path
-        self.start_color = [(0, 0, 255) for i in repeat(None, num_objects)]
+        # Boolean indicating whether to use hard-coded color (when self.color
+        # is True) or rainbow (when self.color is False)
+        self.color = color
+        # List of BGR tuples indicating the starting color for each object path
+        if not color:
+            self.start_color = [(0, 0, 255) for i in repeat(None, num_objects)]
 
         # Set up for yolo and motion tracking
         if method == "yolo":
@@ -231,16 +238,27 @@ class Painting():
         output = self.curr_frame
         # Iterate through all the object paths in self.points
         for pt_group in range(self.num_objects):
-            # For rainbow_loop, set initial color
-            color = self.start_color[pt_group]
+            # If hard-coding color
+            if self.color:
+                # Set color of line
+                set_color = (208, 146, 8)
+                color = set_color
+            else:
+                # For rainbow_loop, set initial color
+                color = self.start_color[pt_group]
             # We need at least 2 points to draw a line
             if len(self.points[pt_group]) > 2:
                 # Iterate through all the points in the current object's path,
                 # drawing a line between each pair
                 for i in range(len(self.points[pt_group])-2):
                     p1, p2 = self.points[pt_group][i], self.points[pt_group][i+1]
-                    # For rainbow_loop, set color2 to next color in spectrum
-                    color2 = self.rainbow_loop(color)
+                    # If hard-coding color
+                    if self.color:
+                        # Color stays the same
+                        color2 = set_color
+                    else:
+                        # For rainbow_loop, set color2 to next color in spectrum
+                        color2 = self.rainbow_loop(color)
                     # Use custom circle drawing function if the two points are
                     # sufficiently close together. Otherwise, break path for
                     # neatness of lines on screen
@@ -255,8 +273,9 @@ class Painting():
                 if shift:
                     self.points[pt_group][i+1] += self.shift_vec
                 # Advance and store starting color for current object path
-                self.start_color[pt_group] = self.rainbow_loop(
-                    self.start_color[pt_group])
+                if not self.color:
+                    self.start_color[pt_group] = self.rainbow_loop(
+                        self.start_color[pt_group])
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
@@ -315,8 +334,6 @@ class Painting():
         # Skip the first frame because it's a black square
         success, self.curr_frame = cap.read()
         while success:
-            # cv2.imwrite("frame%d.jpg" % count, self.curr_frame)  # save frame as JPEG file
-            # frames.append(output)
             centers = self.point_tracking()
             # If there are multiple objects to track, assign newly tracked
             # points to the appropriate object paths
@@ -332,6 +349,8 @@ class Painting():
             output = cv2.flip(output, 1)
             # Show the image output
             cv2.imshow("output", output)
+            # Store output for saving video
+            self.frames.append(output)
             success, self.curr_frame = cap.read()
             key = cv2.waitKey(20)
             if key == 27 or key == ord('q'):  # Exit on ESC or q
@@ -346,22 +365,44 @@ class Painting():
             # over 30, then pop a point from that path
             else:
                 for pt_group in range(self.num_objects):
-                    if len(self.points[pt_group]) > 60:
+                    if len(self.points[pt_group]) > 30:
                         self.points[pt_group].pop(0)
         cv2.destroyWindow("output")
         cap.release()
+
+        if self.save:
+            print("Saving painted frames as video...")
+            size = (self.frames[0].shape[0], self.frames[0].shape[1])
+            video_number = len(os.listdir('output_videos'))
+            video_name = os.path.join('output_videos', "output" + str(video_number) + '.mp4')
+            # my_fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+            my_fourcc = cv2.VideoWriter_fourcc(*'divx')
+            out = cv2.VideoWriter()
+            # out = cv2.VideoWriter(video_name, my_fourcc, 25, size)
+            success = out.open(video_name, my_fourcc, 25, size, True)
+            for i in range(len(self.frames)):
+                cv2.imshow('test',self.frames[i])
+                #keyboard = cv2.waitKey(30)
+                out.write(self.frames[i])
+            out.release()
+            cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CS1290 Lightpainting")
     parser.add_argument("-m", "--method", type=str, default="green",
                         help="Indicates tracking method. Default is green.")
-    parser.add_argument("-s", "--source", type=str, default=0,
+    parser.add_argument("-src", "--source", type=str, default=0,
                         help="Name of the source video with extension.")
     parser.add_argument("-o", "--objects", type=int, default=1,
                         help="Number of objects to track.")
-    parser.add_argument("-sh", "--shift", action="store_true", help=("Shift" +
+    parser.add_argument("-st", "--shift", action="store_true", help=("Shift" +
         " all drawn points to simulate motion at each frame."))
+    parser.add_argument("-c", "--color", action="store_true",
+                        help=("Indicates whether to set color when "
+                            + "initializing Painting object."))
+    parser.add_argument("-sv", "--save", action="store_true", help=("Save" +
+        " drawn frames as a video in the output_videos/ directory."))
 
     args = vars(parser.parse_args())
 
@@ -379,7 +420,10 @@ if __name__ == '__main__':
     source = args["source"]
     num_objects = args["objects"]
     shift = args["shift"]
+    color = args["color"]
+    save = args["save"]
+
 
     # Create Painting object and run parse() to start lightpainting
-    painter = Painting(method, source, num_objects, shift)
+    painter = Painting(method, source, num_objects, shift, color, save)
     painter.parse()
