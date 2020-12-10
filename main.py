@@ -98,7 +98,7 @@ class Painting():
         # Approach 4: simple distance, hardcoded with only 2 trackings, no for loops
         MIN_DIST = 30  # if the centers are too close together, they are probably the same object
         group_assigned = [False, False]
-        # If centers was not empty
+        # If centers is not empty
         if np.sum(centers[0]) != 0:
             # If we have detected 2 objects already
             if self.mult == True:
@@ -121,20 +121,34 @@ class Painting():
                     distance2 = np.linalg.norm(p1-g2)
                 else:
                     distance2 = MIN_DIST + 1
-
+                # If p1 is closer to g1 than g2
                 if distance1 <= distance2:
+                    # Append p1 to the first path
                     self.points[0].append(p1)
+                    # If more than one newly tracked points, and they are
+                    # at least minimum distance apart, append second newly
+                    # tracked point to the second path
                     if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         self.points[1].append(centers[1])
                         group_assigned[1] = True
+                    if len(centers) == 1:
+                        self.points[1].pop(0)
+                # Otherwise, p1 is closer to g2 than g1
                 else:
+                    # Append p1 to the second path
                     self.points[1].append(p1)
+                    # If more than one newly tracked points, and they are
+                    # at least minimum distance apart, append second newly
+                    # tracked point to the first path
                     if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         self.points[0].append(centers[1])
                         group_assigned[0] = True
-            # if we haven't detected multiple objects yet
+                    if len(centers) == 1:
+                        self.points[0].pop(0)
+            # If we haven't detected multiple objects yet
             else:
                 if len(centers) == 1:
+                    # Append first newly tracked point to the first path
                     self.points[0].append(centers[0])
                 elif len(centers) > 1:
                     if np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
@@ -145,8 +159,8 @@ class Painting():
                         self.mult = True
 
         for i in range(2):
-            if group_assigned[i] == False and len(self.points[i]) > 0:
-                self.points[i].pop(0)
+            # if group_assigned[i] == False and len(self.points[i]) > 0 and len(centers) == 1:
+            #     self.points[i].pop(0)
             if len(self.points[i]) == 0:
                 self.mult = False
 
@@ -233,10 +247,16 @@ class Painting():
 
     def rainbow_loop(self, color):
         """
+        Increments or decrements the appropriate channel of a given BGR color
+        tuple in order to advance colors through the hues of the rainbow
+        :param: color, a BGR tuple with channel values in the range [0,255]
         """
+        # Get each channel value
         b = color[0]
         g = color[1]
         r = color[2]
+        # Use conditional statements to determine current color state and
+        # increment or decrement to advance one color foreward in the rainbow
         if (r == 255) and (r > g) and (b == 0):
             g += 15
         elif (g == 255) and (r > 0):
@@ -252,35 +272,52 @@ class Painting():
         return (b, g, r)
 
     def paint(self):
+        """
+        Draws paths on the current frame based on the stored point lists
+        """
         # Draws a straight line on image depending on the location
         output = self.curr_frame
-        # we need at least 2 points
+        # Iterate through all the object paths in self.points
         for pt_group in range(self.num_objects):
             # For rainbow_loop, set initial color
             color = self.start_color[pt_group]
+            # We need at least 2 points to draw a line
             if len(self.points[pt_group]) > 2:
-                # start paint with 1 to avoid drawing dummy points.
+                # Iterate through all the points in the current object's path,
+                # drawing a line between each pair
                 for i in range(len(self.points[pt_group])-2):
                     p1, p2 = self.points[pt_group][i], self.points[pt_group][i+1]
                     # For rainbow_loop, set color2 to next color in spectrum
                     color2 = self.rainbow_loop(color)
-                    # Simple line
-                    # output = cv2.line(output, start_point, end_point, color, thickness)
-                    # Custom circle drawing function
+                    # Use custom circle drawing function if the two points are
+                    # sufficiently close together. Otherwise, break path for
+                    # neatness of lines on screen
                     if np.linalg.norm(p1-p2) < 250:
                         output = self.custom_line(output, p1, p2, color, color2)
-                    # output = self.custom_smooth_line(output, p1, p2)
+                        # Set current color to the stored next color
                         color = color2
+                    # If the shift flag is set, then shift all points but i+1
                     if shift:
                         self.points[pt_group][i] += self.shift_vec
+                # If the shift flag is set, shift the point at i+1 as well
                 if shift:
                     self.points[pt_group][i+1] += self.shift_vec
+                # Advance and store starting color for current object path
                 self.start_color[pt_group] = self.rainbow_loop(
                     self.start_color[pt_group])
         return output
 
     def custom_line(self, output, p1, p2, c1, c2):
-        # Draws circles between two points using a color gradient
+        """
+        Draws circles between p1 and p2 using a color gradient from c1 to c2
+        :param: output, the current frame
+        :param: p1, the first point
+        :param: p2, the second point
+        :param: c1, the first color
+        :param: c2, the second color
+
+        Returns the current frame with a line drawn between p1 and p2
+        """
         distance = np.linalg.norm(p1-p2)
         # radius is between 7 and 4 depending on the distance
         # thickness = int(7 - (distance*3/output.shape[1]))
@@ -314,7 +351,8 @@ class Painting():
 
     def parse(self):
         """
-        reads in the video input and calls tracking on each frame
+        Reads in the video input, calls tracking on each frame, and displays
+        the frame with the generated lightpainting
         """
         cv2.namedWindow("output")
         cap = cv2.VideoCapture(self.source)
@@ -322,34 +360,38 @@ class Painting():
             success, self.curr_frame = cap.read()
         else:
             success = False
-        # skip the first frame bc it's a black square
+        # Skip the first frame because it's a black square
         success, self.curr_frame = cap.read()
         while success:
             # cv2.imwrite("frame%d.jpg" % count, self.curr_frame)  # save frame as JPEG file
             # frames.append(output)
             centers = self.point_tracking()
-            # don't add if point is (0,0)
-            # multiple objects to track, assign centers to groups
+            # If there are multiple objects to track, assign newly tracked
+            # points to the appropriate object paths
             if self.num_objects > 1:
                 self.assign_points(centers)
-            # single object to track
+            # Otherwise, there is a single object to track and append
             else:
+                # Don't add if point is (0,0)
                 if not(np.sum(centers) == 0):
                     self.points[0].append(centers[0])
+            # Paint the light trails
             output = self.paint()
             output = cv2.flip(output, 1)
+            # Show the image output
             cv2.imshow("output", output)
             success, self.curr_frame = cap.read()
-            # print('Read a new frame: ', success)
             key = cv2.waitKey(20)
-            if key == 27 or key == ord('q'):  # exit on ESC or q
+            if key == 27 or key == ord('q'):  # Exit on ESC or q
                 break
-            # Pop a point if no new centers were found
+            # If no new centers were found, pop a point from each path
             if np.sum(centers) == 0:
                 for pt_group in range(self.num_objects):
+                    # Pop as long as the path is nonempty
                     if self.points[pt_group]:
                         self.points[pt_group].pop(0)
-            # If new centers were found, but points length > 30, pop a point
+            # If new centers were found, but the path of points has a length
+            # over 30, then pop a point from that path
             else:
                 for pt_group in range(self.num_objects):
                     if len(self.points[pt_group]) > 30:
