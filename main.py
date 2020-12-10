@@ -394,7 +394,7 @@ class Painting():
             # over 30, then pop a point from that path
             else:
                 for pt_group in range(self.num_objects):
-                    if len(self.points[pt_group]) > 30:
+                    if len(self.points[pt_group]) > 60:
                         self.points[pt_group].pop(0)
         cv2.destroyWindow("output")
         cap.release()
@@ -413,6 +413,7 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
 
+    # Store input args
     if args["method"] == "green":
         method = "green"
     elif args["method"] == "yolo":
@@ -426,5 +427,7 @@ if __name__ == '__main__':
     source = args["source"]
     num_objects = args["objects"]
     shift = args["shift"]
+
+    # Create Painting object and run parse() to start lightpainting
     painter = Painting(method, source, num_objects, shift)
     painter.parse()
