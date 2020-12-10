@@ -321,9 +321,10 @@ class Painting():
         return output
 
     # save frames as the given filename.
-    def frames_to_vid(self, filename):
+    def frames_to_vid(self, filename, fps):
         frame_array = self.frames
-        fps = 5.0
+        if self.source == 0:
+            fps = 5.0
         print("Video is being saved...")
         out = cv2.VideoWriter(filename,cv2.VideoWriter_fourcc(*'MP4V'), fps, (frame_array[0].shape[1], frame_array[0].shape[0]), True)
         for frame in frame_array:
@@ -338,6 +339,8 @@ class Painting():
         """
         cv2.namedWindow("output")
         cap = cv2.VideoCapture(self.source)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        print("fps", fps)
         if cap.isOpened():
             success, self.curr_frame = cap.read()
         else:
@@ -390,7 +393,7 @@ class Painting():
                 os.makedirs(output_dir)
             video_number = len(os.listdir(output_dir))
             video_name = os.path.join(output_dir, "output" + str(video_number) + '.mp4')
-            self.frames_to_vid(video_name)
+            self.frames_to_vid(video_name, fps)
 
 
 if __name__ == '__main__':
