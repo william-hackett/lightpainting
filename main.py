@@ -58,8 +58,10 @@ class Painting():
         self.curr_frame = None
         # Store a list of painted frames in order to save video
         self.frames = []
+
         # Approach 3: initialize pts with dummy points at different sections of the screen
         # self.points = [[np.asarray([i*WIDTH//(num_objects),i*HEIGHT//(num_objects)], dtype=np.float32)] for i in range(num_objects)]
+
         # A list of lists, where each inner list is a list of points
         # representing an object's tracked path
         self.points = [[] for i in range(num_objects)]
@@ -194,60 +196,6 @@ class Painting():
 
         # group_assigned = [0]*2
         # center_assigned = [0]*len(centers)
-
-        # for i in range(len(centers)):
-        #     p1 = centers[i]
-        #     if not(np.sum(p1) == 0):
-        #         closest_group = None
-        #         # stores distance between current center and each group
-        #         distance_to_group = {}
-        #         for pt_group in range(self.num_objects):
-        #             # if center not grouped and current group is empty, assign point to group
-        #             if not self.points[pt_group] and not center_assigned[i]:
-        #                 closest_group = pt_group
-        #                 center_assigned[i] = 1
-        #             # if center is not empty, calculate center distance from group
-        #             elif len(self.points[pt_group]) > 0:
-        #                 p2 = self.points[pt_group][-1]
-        #                 distance = math.sqrt(
-        #                     ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2))
-        #                 distance_to_group[pt_group] = distance
-        #         if closest_group is None:
-        #             # assign the group with min distance to center as closest group
-        #             closest_group = min(distance_to_group,
-        #                                 key=distance_to_group.get)
-        #         self.points[closest_group].append(p1)
-        #         group_assigned[closest_group] = 1
-        #         center_assigned[i] = 1
-        # if np.count_nonzero(center_assigned) < len(centers):
-        #     for pt_group in range(self.num_objects):
-        #         if len(self.points[pt_group]) > 0 and group_assigned[pt_group] == 0:
-        #             self.points[pt_group].pop(0)
-
-        # Approach 2
-        # center_assigned = [None for i in repeat(None, len(centers))]
-        # distances = [[math.inf for i in repeat(None, self.num_objects)] for j in repeat(None, len(centers))]
-        # min_distance = math.inf
-        # for pt_group in range(self.num_objects):
-        #     for c in range(len(centers)):
-        #         p1 = centers[c]
-        #         if not(np.sum(p1) == 0):
-        #             if not self.points[pt_group]:
-        #                 if not center_assigned[c]:
-        #                     self.points[pt_group].append(p1)
-        #                     center_assigned[c] = -1
-        #                 break
-        #             p2 = self.points[pt_group][-1]
-        #             distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
-        #             distances[c][pt_group] = distance
-        #             if distance < min_distance:
-        #                 min_distance = distance
-        #                 center_assigned[c] = pt_group
-        # for i in range(len(center_assigned)):
-        #     assign = center_assigned[i]
-        #     if assign is not None:
-        #         if assign > -1:
-        #             self.points[assign].append(centers[i])
 
     def rainbow_loop(self, color):
         """
