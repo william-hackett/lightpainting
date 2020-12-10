@@ -320,15 +320,17 @@ class Painting():
             x, y = int(point[0]), int(point[1])
         return output
 
+    # save frames as the given filename.
     def frames_to_vid(self, filename):
         frame_array = self.frames
+        fps = 5.0
         print("Video is being saved...")
-        out = cv2.VideoWriter(filename,cv2.VideoWriter_fourcc(*'XVID'), 5.0, (frame_array[0].shape[1], frame_array[0].shape[0]), True)
+        out = cv2.VideoWriter(filename,cv2.VideoWriter_fourcc(*'MP4V'), fps, (frame_array[0].shape[1], frame_array[0].shape[0]), True)
         for frame in frame_array:
             out.write(frame)
         out.release()
 
-
+    # the main repl: this function handles tracking, painting and displaying
     def parse(self):
         """
         Reads in the video input, calls tracking on each frame, and displays
@@ -382,8 +384,12 @@ class Painting():
         if self.save:
             print("Saving painted frames as video...")
             size = (self.frames[0].shape[0], self.frames[0].shape[1])
-            video_number = len(os.listdir('output_videos'))
-            video_name = os.path.join('output_videos', "output" + str(video_number) + '.mp4')
+            # create an output dir if it doesn't exist
+            output_dir = 'output_videos'
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            video_number = len(os.listdir(output_dir))
+            video_name = os.path.join(output_dir, "output" + str(video_number) + '.mp4')
             self.frames_to_vid(video_name)
 
 
