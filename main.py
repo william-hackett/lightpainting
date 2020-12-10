@@ -39,28 +39,51 @@ class Painting():
     - self.points is the current list of points representing the tracked path
     """
 
-    def __init__(self, method, source, num_objects):
+    def __init__(self, method, source, num_objects, shift):
+        # Initialize the tracking method
         self.method = method
+        # Initialize the video source
         self.source = source
+        # Initialize the number of objects to be tracked
+        self.num_objects = num_objects
+        # Initialize Boolean indicating whether to shift points at each frame
+        self.shift = shift
+        # Vector by which to shift each point to simulate motion to the right
+        self.shift_vec = np.array([-10, 0])
+        # Holds the current frame
         self.curr_frame = None
+        # Store a list of painted frames in order to save video
         self.frames = []
         # Approach 3: initialize pts with dummy points at different sections of the screen
         # self.points = [[np.asarray([i*WIDTH//(num_objects),i*HEIGHT//(num_objects)], dtype=np.float32)] for i in range(num_objects)]
+        # A list of lists, where each inner list is a list of points
+        # representing an object's tracked path
         self.points = [[] for i in range(num_objects)]
+        # Boolean indicating whether multiple objects have been detected
         self.mult = False
+        # List of RBG tuples indicating the starting color for each object path
         self.start_color = [(0, 0, 255) for i in repeat(None, num_objects)]
-        self.num_objects = num_objects
+
+        # Set up for yolo and motion tracking
         if method == "yolo":
             init_yolo()
         elif method == "motion":
             init_motion()
 
     def point_tracking(self):
+        """
+        Tracks the target object(s) in the current frame and returns center(s),
+        a list of points in the form [(x,y)], representing the center of the
+        bounding box around the target object
+        """
         img = self.curr_frame
+        # Track regions of green pixels
         if self.method == "green":
             centers = track_green(img, self.num_objects)
+        # Track hands with YOLO hand detection
         elif self.method == "yolo":
             centers = track_yolo(img)
+        # Track moving foreground objects with background subtraction
         elif self.method == "motion":
             centers, thresh = track_motion(img,  self.num_objects)
             # cv2.imshow("threshold view", thresh) #in order to view the masked filter
@@ -69,24 +92,32 @@ class Painting():
 
     def assign_points(self, centers):
         """
-        group points corresponding to each object
-        :param: centers a list of points corresponding to each object
+        Assign the newly tracked points to the corresponding path
+        :param: centers, a list of points corresponding to each object
         """
         # Approach 4: simple distance, hardcoded with only 2 trackings, no for loops
-        MIN_DIST = 30  # if the centers are too close together, they are prob the same object
+        MIN_DIST = 30  # if the centers are too close together, they are probably the same object
         group_assigned = [False, False]
+        # If centers was not empty
         if np.sum(centers[0]) != 0:
-            # if we have detacted 2 objects already
+            # If we have detected 2 objects already
             if self.mult == True:
                 p1 = centers[0]
+                # If the first path contains a point
                 if len(self.points[0]) > 0:
+                    # The last point in the first path
                     g1 = self.points[0][-1]
+                    # Calculate the distance between the newly tracked point
+                    # and the last point in the first path
                     distance1 = np.linalg.norm(p1-g1)
                 else:
                     distance1 = MIN_DIST + 1
-
+                # If the second path contains a point
                 if len(self.points[1]) > 0:
+                    # The last point in the second path
                     g2 = self.points[1][-1]
+                    # Calculate the distance between the newly tracked point
+                    # and the last point in the first path
                     distance2 = np.linalg.norm(p1-g2)
                 else:
                     distance2 = MIN_DIST + 1
@@ -101,7 +132,7 @@ class Painting():
                     if len(centers) > 1 and np.linalg.norm(centers[0] - centers[1]) > MIN_DIST:
                         self.points[0].append(centers[1])
                         group_assigned[0] = True
-            # if we haven't detacted multiple objects yet
+            # if we haven't detected multiple objects yet
             else:
                 if len(centers) == 1:
                     self.points[0].append(centers[0])
@@ -114,7 +145,7 @@ class Painting():
                         self.mult = True
 
         for i in range(2):
-            if group_assigned[i] == False and len(self.points[i]) > 0 and self.mult == True:
+            if group_assigned[i] == False and len(self.points[i]) > 0:
                 self.points[i].pop(0)
             if len(self.points[i]) == 0:
                 self.mult = False
@@ -201,6 +232,8 @@ class Painting():
         #             self.points[assign].append(centers[i])
 
     def rainbow_loop(self, color):
+        """
+        """
         b = color[0]
         g = color[1]
         r = color[2]
@@ -234,9 +267,14 @@ class Painting():
                     # Simple line
                     # output = cv2.line(output, start_point, end_point, color, thickness)
                     # Custom circle drawing function
-                    output = self.custom_line(output, p1, p2, color, color2)
+                    if np.linalg.norm(p1-p2) < 250:
+                        output = self.custom_line(output, p1, p2, color, color2)
                     # output = self.custom_smooth_line(output, p1, p2)
-                    color = color2
+                        color = color2
+                    if shift:
+                        self.points[pt_group][i] += self.shift_vec
+                if shift:
+                    self.points[pt_group][i+1] += self.shift_vec
                 self.start_color[pt_group] = self.rainbow_loop(
                     self.start_color[pt_group])
         return output
@@ -306,9 +344,16 @@ class Painting():
             key = cv2.waitKey(20)
             if key == 27 or key == ord('q'):  # exit on ESC or q
                 break
-            for pt_group in range(self.num_objects):
-                if len(self.points[pt_group]) > 40:
-                    self.points[pt_group].pop(0)
+            # Pop a point if no new centers were found
+            if np.sum(centers) == 0:
+                for pt_group in range(self.num_objects):
+                    if self.points[pt_group]:
+                        self.points[pt_group].pop(0)
+            # If new centers were found, but points length > 30, pop a point
+            else:
+                for pt_group in range(self.num_objects):
+                    if len(self.points[pt_group]) > 30:
+                        self.points[pt_group].pop(0)
         cv2.destroyWindow("output")
         cap.release()
 
@@ -318,9 +363,11 @@ if __name__ == '__main__':
     parser.add_argument("-m", "--method", type=str, default="green",
                         help="Indicates tracking method. Default is green.")
     parser.add_argument("-s", "--source", type=str, default=0,
-                        help="Name of the source video with extension")
+                        help="Name of the source video with extension.")
     parser.add_argument("-o", "--objects", type=int, default=1,
-                        help="Number of objects to track")
+                        help="Number of objects to track.")
+    parser.add_argument("-sh", "--shift", action="store_true", help=("Shift" +
+        " all drawn points to simulate motion at each frame."))
 
     args = vars(parser.parse_args())
 
@@ -336,5 +383,6 @@ if __name__ == '__main__':
         method = "green"
     source = args["source"]
     num_objects = args["objects"]
-    painter = Painting(method, source, num_objects)
+    shift = args["shift"]
+    painter = Painting(method, source, num_objects, shift)
     painter.parse()
