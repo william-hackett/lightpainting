@@ -320,6 +320,15 @@ class Painting():
             x, y = int(point[0]), int(point[1])
         return output
 
+    def frames_to_vid(self, filename):
+        frame_array = self.frames
+        print("Video is being saved...")
+        out = cv2.VideoWriter(filename,cv2.VideoWriter_fourcc(*'XVID'), 5.0, (frame_array[0].shape[1], frame_array[0].shape[0]), True)
+        for frame in frame_array:
+            out.write(frame)
+        out.release()
+
+
     def parse(self):
         """
         Reads in the video input, calls tracking on each frame, and displays
@@ -375,17 +384,7 @@ class Painting():
             size = (self.frames[0].shape[0], self.frames[0].shape[1])
             video_number = len(os.listdir('output_videos'))
             video_name = os.path.join('output_videos', "output" + str(video_number) + '.mp4')
-            # my_fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-            my_fourcc = cv2.VideoWriter_fourcc(*'divx')
-            out = cv2.VideoWriter()
-            # out = cv2.VideoWriter(video_name, my_fourcc, 25, size)
-            success = out.open(video_name, my_fourcc, 25, size, True)
-            for i in range(len(self.frames)):
-                cv2.imshow('test',self.frames[i])
-                #keyboard = cv2.waitKey(30)
-                out.write(self.frames[i])
-            out.release()
-            cv2.destroyAllWindows()
+            self.frames_to_vid(video_name)
 
 
 if __name__ == '__main__':
