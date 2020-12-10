@@ -431,7 +431,6 @@ if __name__ == '__main__':
     color = args["color"]
     save = args["save"]
 
-
     # Create Painting object and run parse() to start lightpainting
     painter = Painting(method, source, num_objects, shift, color, save)
     painter.parse()
