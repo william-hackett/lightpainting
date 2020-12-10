@@ -34,9 +34,13 @@ class Painting():
 
     - self.method is the tracking method to use for lightpainting
     - self.source is the source video file name with extension
+    - self.num_objects is the number of objects to be tracked
+    - self.shift is a Boolean indicating whether to shift points by shift_vec
     - self.curr_frame is the current frame being painted
     - self.frames is a list of painted frames for saving a video
-    - self.points is the current list of points representing the tracked path
+    - self.points is the current list of point lists representing tracked paths
+    - self.mult is a Boolean indicating whether we are tracking multiple objs
+    - self.start_color is a list of RGB tuples containing path starting colors
     """
 
     def __init__(self, method, source, num_objects, shift):
