@@ -1,6 +1,7 @@
 # lightpainting
 Brown CS1290 Computational Photography - Lightpainting Final Project
 
+
 *Use the project by running the following commands in the project main directory:
 
 - For light painting with green pixel tracking:
@@ -11,7 +12,7 @@ $ python main.py --method yolo
 
 - For light painting with the background subtraction model:
 $ python main.py --method motion
-\end{verbatim}
+
 
 *Optional Flags:
 
